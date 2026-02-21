@@ -1,0 +1,14 @@
+{
+  "meta": { "tempo": 100, "steps": 12, "bars": 4, "ppq": 480 },
+  "tracks": [
+    {
+      "name": "Drums",
+      "isPercussion": true,
+      "patterns": [
+        { "id":"H", "type":"modulo", "note":42, "interval":1,  "velocity":70,  "duration":1 },
+        { "id":"K", "type":"modulo", "note":36, "interval":12, "velocity":110, "duration":3, "offset":0 },
+        { "id":"S", "type":"modulo", "note":38, "interval":12, "velocity":100, "duration":3, "offset":6 }
+      ]
+    }
+  ]
+}

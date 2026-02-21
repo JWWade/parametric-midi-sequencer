@@ -1,0 +1,21 @@
+# Build directories
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Output files
+out/*.mid
+
+# Dependencies
+node_modules/

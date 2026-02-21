@@ -1,0 +1,23 @@
+[
+  {
+    "Name": "kick",
+    "Note": 36,
+    "Type": "modulo",
+    "Interval": 4,
+    "Expression": null
+  },
+  {
+    "Name": "snare",
+    "Note": 38,
+    "Type": "modulo",
+    "Interval": 3,
+    "Expression": null
+  },
+  {
+    "Name": "hihat",
+    "Note": 42,
+    "Type": "function",
+    "Interval": 0,
+    "Expression": "sin(x)\u003E0.5"
+  }
+]

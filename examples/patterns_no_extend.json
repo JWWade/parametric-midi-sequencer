@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "tempo": 100,
+    "steps": 16,
+    "bars": 8,
+    "ppq": 480,
+    "autoExtend": false
+  },
+  "tracks": [
+    {
+      "name": "Drums",
+      "channel": -1,
+      "isPercussion": true,
+      "patterns": [
+        {
+          "id": "K",
+          "type": "modulo",
+          "note": 36,
+          "interval": 8,
+          "mode": "global",
+          "velocity": 110,
+          "duration": 4,
+          "offset": 0
+        },
+        {
+          "id": "S",
+          "type": "modulo",
+          "note": 38,
+          "interval": 8,
+          "mode": "global",
+          "velocity": 100,
+          "duration": 4,
+          "offset": 4
+        }
+      ]
+    }
+  ]
+}

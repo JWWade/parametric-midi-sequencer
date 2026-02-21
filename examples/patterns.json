@@ -1,0 +1,14 @@
+{
+  "meta": { "tempo": 100, "steps": 16, "bars": 4, "ppq": 480 },
+  "tracks": [
+    {
+      "name": "Drums",
+      "channel": -1,
+      "isPercussion": true,
+      "patterns": [
+        { "id": "K", "type": "modulo", "note": 36, "interval": 4, "mode": "global", "velocity": 110, "duration": 1 },
+        { "id": "S", "type": "modulo", "note": 38, "interval": 3, "mode": "global", "velocity": 100, "duration": 1 }
+      ]
+    }
+  ]
+}
