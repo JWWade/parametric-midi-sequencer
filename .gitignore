@@ -1,6 +1,7 @@
 # Build directories
 bin/
 obj/
+out/
 
 # IDE
 .vs/
@@ -8,14 +9,68 @@ obj/
 *.swp
 *.swo
 *~
+*.swf
+
+# Visual Studio
+DebugPublic/
+Debug/
+Debug.x86/
+Release/
+Release.x86/
+Profile.x86/
+*.aps
+*.bak
+*.ncb
+*.opensdf
+*.psess
+*.sap
+*.sdf
+*.sln.docstates
+*.suo
+*.user
+*.VC.db
+*.VC.VC.opendb
 
 # User-specific files
 *.user
-*.suo
+*.userosscache
+*.sln.user
 *.userprefs
+.vs/
+Profiler.zip
 
-# Output files
-out/*.mid
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+.directory
+.env
+.env.local
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+.nuget/packages/
 
 # Dependencies
 node_modules/
+
+# Build artifacts
+*.log
+*.dll
+*.exe
+*.pdb
+*.so
+*.dylib
+
+# Test results
+TestResults/
+.coverage
+*.cobertura.xml
