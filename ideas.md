@@ -332,3 +332,23 @@ Reinforces the need for:
 - Pitch‑class‑set chord representation  
 - Interval‑based reasoning  
 - Constraint‑driven transform layers  
+
+___
+
+14. Imperceptible Change Workflow (Gradual Harmonic Morphing)
+
+Another generative idea I’ve explored is what I call imperceptible change — a workflow where chord progressions evolve so gradually that the listener doesn’t immediately notice the harmonic shift. Over time, the harmony drifts into a new key or sonority through a sequence of tiny interval adjustments.
+
+This is especially suited to slow, ambient, or atmospheric music where harmonic motion is more about color than function.
+
+1. The Core Concept
+
+Instead of jumping from one chord to another, the system makes small, incremental changes to the chord’s pitch‑class set:
+
+- Add or remove a single pitch  
+- Raise or lower one pitch by a semitone  
+- Shift one voice at a time  
+- Replace one chord tone with a nearby neighbor  
+- Gradually reshape the interval structure  
+
+Over many measures, these micro‑changes accumulate into a completely different chord — or even a different key — but the transition feels smooth and organic.
