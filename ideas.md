@@ -352,3 +352,79 @@ Instead of jumping from one chord to another, the system makes small, incrementa
 - Gradually reshape the interval structure  
 
 Over many measures, these micro‑changes accumulate into a completely different chord — or even a different key — but the transition feels smooth and organic.
+
+___
+
+15. Motif Sliding Workflow (Interval‑Preserving Melodic Variation)
+
+Another generative idea I’ve explored involves taking a motif — a short melodic idea — and “sliding” it around within a key. The goal is to create melodic variety while preserving the motif’s interval structure or shape.
+
+This is a way of generating new melodic material that feels related to the original idea but not repetitive.
+
+1. The Core Concept
+
+Start with a motif defined by:
+
+- A sequence of intervals  
+- A rhythmic pattern  
+- A contour (up/down shape)  
+
+Then generate variations by:
+
+- Moving the motif to different scale degrees  
+- Keeping the interval pattern intact  
+- Ensuring the notes remain inside the chosen scale  
+- Adjusting for out‑of‑scale tones when necessary  
+- Optionally aligning the motif with the underlying harmony  
+
+This creates a family of related melodic ideas.
+
+2. Why This Workflow Matters
+
+This approach is:
+
+- Melodically driven  
+- Interval‑preserving  
+- Scale‑aware  
+- Variation‑oriented  
+- Useful for developing themes  
+
+It’s a way to explore a motif’s potential without abandoning its identity.
+
+3. How the System Might Implement It
+
+A possible generative loop:
+
+1. User defines a motif:
+   - As intervals (e.g., +2, +2, –1)  
+   - Or as pitch‑class steps  
+   - Or as a literal note sequence  
+
+2. User defines a scale or pitch‑class set.
+
+3. The engine generates variations by:
+   - Choosing new starting degrees  
+   - Applying the interval pattern  
+   - Correcting notes to fit the scale  
+   - Optionally aligning with chord tones  
+
+4. Variations can be:
+   - Sequential (motif moves each measure)  
+   - Randomized (motif jumps around the scale)  
+   - Guided by ML (model learns your motif‑sliding tendencies)  
+
+4. Interaction With Other Workflows
+
+Motif sliding can be combined with:
+
+- Scale‑based harmonization  
+  Motif variations adapt to the current chord or scale.
+
+- Cycle‑based pitch centers  
+  Motif slides follow the cycle’s pitch centers.
+
+- Voice‑leading constraints  
+  Motif variations must share N notes with the previous motif.
+
+- Imperceptible change  
+  Motif evolves gradually through micro‑adjustments.
