@@ -1,5 +1,5 @@
 
-ideas.md (draft 1)
+ideas.md
 A living document for early‑stage concepts, experiments, and design explorations.
 
 ---
@@ -76,7 +76,7 @@ The system should support:
 - Pitch‑class‑set‑based thinking  
 - Atypical progressions and modal movement  
 
-Key idea:
+Key idea:  
 Represent chords not as “Cmaj7” but as:
 
 - Scale degree + chord type  
@@ -91,7 +91,7 @@ This avoids forcing Western functional harmony onto the system.
 
 Allow arbitrary pitch‑class sets:
 
-`json
+`
 "scale_pitches": [0, 2, 5, 7, 10]
 `
 
@@ -109,17 +109,17 @@ This supports:
 Chords can be defined in multiple ways:
 
 A. Interval structure (quartal, quintal, etc.)
-`json
+`
 { "type": "quartal", "root": 0, "structure": [0, 5, 10] }
 `
 
 B. Explicit pitch‑class sets
-`json
+`
 { "type": "cluster", "pitches": [2, 5, 7, 11] }
 `
 
 C. Scale‑degree based
-`json
+`
 { "degree": 3, "type": "quartal" }
 `
 
@@ -131,7 +131,7 @@ The engine resolves these into MIDI notes.
 
 A progression is a time‑ordered list of chord events:
 
-`json
+`
 {
   "chord_track": {
     "resolution": "per_beat",
@@ -198,28 +198,16 @@ This creates a loop between human creativity and algorithmic exploration.
 
 ---
 
-Scale‑Based Harmonization Workflow (Example: C Major with a Flat 7)
+11. Scale‑Based Harmonization Workflow (Example: C Major with a Flat 7)
 
-This workflow represents another way I like to generate harmonic material. Unlike the 12‑tone cycle experiments or form‑based approaches (like the 12‑bar blues), this method starts with a scale choice and builds harmony directly from it.
+Another generative workflow begins with a scale choice and builds harmony directly from it.
 
 1. Scale as the Harmonic Universe
+Example:  
+C major with a flat 7 (Bb) → essentially C Mixolydian.
 
-In this example, the scale is:
-
-- C major  
-- But with a flat 7th degree (Bb instead of B)
-
-This is essentially C Mixolydian, but the important part is that the tool should treat this as a custom pitch‑class set, not a mode name.
-
-`
-C D E F G A Bb
-`
-
-This scale becomes the “harmonic universe” for the initial harmonization.
-
-2. Direct Harmonization of the Scale
-
-From this scale, I build seventh chords by stacking thirds (or whatever interval structure I choose). For Mixolydian, the diatonic 7th chords become:
+2. Direct Harmonization
+Stacking thirds yields:
 
 - C7  
 - Dm7  
@@ -229,42 +217,118 @@ From this scale, I build seventh chords by stacking thirds (or whatever interval
 - Am7  
 - Bbmaj7  
 
-This is the raw harmonization layer. It’s not tied to a form or a cycle — it’s simply the chords implied by the scale.
-
-3. Substitution Layer (Tinkering)
-
-After generating the basic harmonization, I often apply substitutions. These can be:
+3. Substitution Layer
+After harmonization, apply substitutions:
 
 - Secondary dominants  
-- Tritone substitutions  
+- Tritone subs  
 - Parallel minor borrowing  
 - Modal interchange  
 - ii–V insertions  
-- Dominant swaps  
 - Chromatic approaches  
 
-This is a post‑processing layer that modifies the initial harmonization. It’s a flexible, creative step where I reshape the progression while staying loosely connected to the original scale.
+4. Why This Matters
+This workflow is:
 
-4. Why This Workflow Matters
+- Scale‑driven  
+- Harmonically constrained  
+- Transformative  
+- Ideal for modal colors and non‑functional harmony  
 
-This approach is different from the others in a few ways:
+5. Fit Within the System
+This reinforces the need for:
 
-- It’s scale‑driven, not form‑driven  
-- It’s harmonically constrained, not chromatically exploratory  
-- It’s transformative, not generative from scratch  
-- It’s ideal for exploring modal colors, non‑functional harmony, and subtle reharmonizations  
+- Flexible scale system  
+- Chord‑construction layer  
+- Substitution layer  
+- Unified JSON output  
 
-The tool should support this workflow as a first‑class citizen, alongside:
+---
 
-- Form‑based generation (e.g., blues)  
-- Cycle‑based generation (e.g., chromatic per bar)  
-- Pattern‑based generation (e.g., quartal stacks, intervallic logic)  
+12. Scale‑Based Harmonization Workflow (Example: “Gypsy” Scale)
 
-5. How This Fits Into the Larger System
+Another variation uses the so‑called Gypsy scale (Hungarian minor / double harmonic minor variant).
 
-This workflow reinforces the idea that the engine needs:
+1. Scale Definition
+Example in C:
 
-- A flexible scale system (arbitrary pitch‑class sets)  
-- A chord‑construction layer (stacking rules, interval structures)  
-- A substitution layer (transformations applied after harmonization)  
-- A unified JSON representation so all workflows converge into the same output format  
+`
+C  D  Eb  F#  G  Ab  B
+`
+
+Pitch‑class set:
+
+`
+[0, 2, 3, 6, 7, 8, 11]
+`
+
+2. Harmonization
+Stacking thirds yields exotic chords such as:
+
+- Cmaj7♯5  
+- Dm(maj7)  
+- Eb+maj7  
+- F#dim7 or F#7alt  
+- G7♭9♭13  
+- Abmaj7♯5  
+- Bdim or B7alt  
+
+3. Substitutions
+Often emphasizes:
+
+- Augmented triads  
+- Altered dominants  
+- Chromatic mediants  
+- Symmetry‑based movements  
+- Parallel motion  
+
+4. Why This Matters
+Supports:
+
+- Arbitrary pitch‑class sets  
+- Non‑functional harmony  
+- Intervallic chord construction  
+- Transform layers  
+
+---
+
+13. Voice‑Leading Constraint Workflow (Shared‑Pitch Rules)
+
+Another generative idea:  
+Each subsequent chord must share at least N pitch classes with the previous chord.
+
+1. The Rule
+- N = 3 → very tight continuity  
+- N = 2 → moderate continuity  
+- N = 1 → loose continuity  
+- N = 0 → no constraint  
+
+2. Why This Matters
+This workflow is:
+
+- Intervallic  
+- Voice‑leading‑driven  
+- Non‑functional  
+- Ideal for modal, ambient, or quartal textures  
+
+3. How the System Might Use It
+1. Start with an initial chord.  
+2. Generate candidate chords.  
+3. Filter by shared‑pitch rule.  
+4. Choose based on randomness, weights, or ML.  
+5. Repeat.  
+
+4. Interaction With Other Workflows
+This constraint can be layered on top of:
+
+- Scale‑based harmonization  
+- Cycle‑based pitch centers  
+- Form‑based structures  
+- ML‑generated sequences  
+
+5. Fit Within the System
+Reinforces the need for:
+
+- Pitch‑class‑set chord representation  
+- Interval‑based reasoning  
+- Constraint‑driven transform layers  
