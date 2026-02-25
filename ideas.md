@@ -195,3 +195,76 @@ This creates a loop between human creativity and algorithmic exploration.
 - Pattern “mutation” and evolutionary algorithms  
 - Multi‑track generative structures  
 - Integration with DAWs via MIDI drag‑and‑drop  
+
+---
+
+Scale‑Based Harmonization Workflow (Example: C Major with a Flat 7)
+
+This workflow represents another way I like to generate harmonic material. Unlike the 12‑tone cycle experiments or form‑based approaches (like the 12‑bar blues), this method starts with a scale choice and builds harmony directly from it.
+
+1. Scale as the Harmonic Universe
+
+In this example, the scale is:
+
+- C major  
+- But with a flat 7th degree (Bb instead of B)
+
+This is essentially C Mixolydian, but the important part is that the tool should treat this as a custom pitch‑class set, not a mode name.
+
+`
+C D E F G A Bb
+`
+
+This scale becomes the “harmonic universe” for the initial harmonization.
+
+2. Direct Harmonization of the Scale
+
+From this scale, I build seventh chords by stacking thirds (or whatever interval structure I choose). For Mixolydian, the diatonic 7th chords become:
+
+- C7  
+- Dm7  
+- Em7♭5  
+- Fmaj7  
+- Gm7  
+- Am7  
+- Bbmaj7  
+
+This is the raw harmonization layer. It’s not tied to a form or a cycle — it’s simply the chords implied by the scale.
+
+3. Substitution Layer (Tinkering)
+
+After generating the basic harmonization, I often apply substitutions. These can be:
+
+- Secondary dominants  
+- Tritone substitutions  
+- Parallel minor borrowing  
+- Modal interchange  
+- ii–V insertions  
+- Dominant swaps  
+- Chromatic approaches  
+
+This is a post‑processing layer that modifies the initial harmonization. It’s a flexible, creative step where I reshape the progression while staying loosely connected to the original scale.
+
+4. Why This Workflow Matters
+
+This approach is different from the others in a few ways:
+
+- It’s scale‑driven, not form‑driven  
+- It’s harmonically constrained, not chromatically exploratory  
+- It’s transformative, not generative from scratch  
+- It’s ideal for exploring modal colors, non‑functional harmony, and subtle reharmonizations  
+
+The tool should support this workflow as a first‑class citizen, alongside:
+
+- Form‑based generation (e.g., blues)  
+- Cycle‑based generation (e.g., chromatic per bar)  
+- Pattern‑based generation (e.g., quartal stacks, intervallic logic)  
+
+5. How This Fits Into the Larger System
+
+This workflow reinforces the idea that the engine needs:
+
+- A flexible scale system (arbitrary pitch‑class sets)  
+- A chord‑construction layer (stacking rules, interval structures)  
+- A substitution layer (transformations applied after harmonization)  
+- A unified JSON representation so all workflows converge into the same output format  
