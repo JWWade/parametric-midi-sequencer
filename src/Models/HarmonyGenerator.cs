@@ -24,7 +24,8 @@ namespace ParametricMidiSequencer.Models
             // apply transform layer if requested
             if (harmony.Constraints != null && harmony.Constraints.MinSharedPitches > 0)
             {
-                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, harmony.Scale);
+                int depth = harmony.Constraints.TransformDepth > 0 ? harmony.Constraints.TransformDepth : int.MaxValue;
+                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, harmony.Scale, depth);
             }
 
             // convert final chords into manual events, preserving original times
@@ -51,7 +52,8 @@ namespace ParametricMidiSequencer.Models
         #region transform helpers
 
         // Enforce that each chord (after the first) shares at least `minShared` pitch classes with the previous chord.
-        private static void ApplyMinSharedPitches(List<List<int>> chords, int minShared, List<int> scale)
+        // depth: controls multi-voice search scope (1=single, 2=pairs, 3+=triples, etc.)
+        private static void ApplyMinSharedPitches(List<List<int>> chords, int minShared, List<int> scale, int depth = 2)
         {
             for (int i = 1; i < chords.Count; i++)
             {
@@ -60,7 +62,7 @@ namespace ParametricMidiSequencer.Models
                 if (CountShared(prev, curr) >= minShared)
                     continue;
 
-                var adjusted = AdjustChord(curr, prev, minShared, scale);
+                var adjusted = AdjustChord(curr, prev, minShared, scale, depth);
                 // if adjustment returned non-null, replace
                 if (adjusted != null)
                     chords[i] = adjusted;
@@ -77,7 +79,8 @@ namespace ParametricMidiSequencer.Models
         // Returns the new chord (same size) or null if no acceptable adjustment found.
         // The algorithm now handles arbitrary chord sizes (root + N voices) and will
         // attempt small semitone moves on non-root voices to increase shared pitch classes.
-        private static List<int> AdjustChord(List<int> curr, List<int> prev, int minShared, List<int> scale)
+        // depth: controls search scope (1=single voices, 2=single+pairs, 3=single+pairs+triples, etc.)
+        private static List<int> AdjustChord(List<int> curr, List<int> prev, int minShared, List<int> scale, int depth = 2)
         {
             if (curr == null || curr.Count < 2)
                 return null;
@@ -132,6 +135,131 @@ namespace ParametricMidiSequencer.Models
 
                     if (Meets(candidateChord))
                         return candidateChord;
+                }
+            }
+
+            // Try pairwise adjustments (two non-root voices) to allow reaching the target
+            // when single-voice moves are insufficient. Only if depth >= 2.
+            if (depth >= 2)
+            {
+                // Scale-aware pairs first
+                for (int j1 = 1; j1 < voices; j1++)
+                {
+                    for (int j2 = j1 + 1; j2 < voices; j2++)
+                    {
+                        foreach (int d1 in new[] { -1, 1, -2, 2 })
+                        foreach (int d2 in new[] { -1, 1, -2, 2 })
+                        {
+                            var candidate = new List<int>(curr);
+                            candidate[j1] = curr[j1] + d1;
+                            candidate[j2] = curr[j2] + d2;
+
+                            var pcs = new HashSet<int>(candidate.Select(x => ((x % 12) + 12) % 12));
+                            if (pcs.Count < voices)
+                                continue;
+
+                            // prefer scale tones
+                            if (scale != null && scale.Count > 0)
+                            {
+                                int pc1 = ((candidate[j1] % 12) + 12) % 12;
+                                int pc2 = ((candidate[j2] % 12) + 12) % 12;
+                                if (!scale.Contains(pc1) || !scale.Contains(pc2))
+                                    continue;
+                            }
+
+                            if (Meets(candidate))
+                                return candidate;
+                        }
+                    }
+                }
+
+                // Fallback pairs without scale filter
+                for (int j1 = 1; j1 < voices; j1++)
+                {
+                    for (int j2 = j1 + 1; j2 < voices; j2++)
+                    {
+                        foreach (int d1 in new[] { -1, 1, -2, 2 })
+                        foreach (int d2 in new[] { -1, 1, -2, 2 })
+                        {
+                            var candidate = new List<int>(curr);
+                            candidate[j1] = curr[j1] + d1;
+                            candidate[j2] = curr[j2] + d2;
+
+                            var pcs = new HashSet<int>(candidate.Select(x => ((x % 12) + 12) % 12));
+                            if (pcs.Count < voices)
+                                continue;
+
+                            if (Meets(candidate))
+                                return candidate;
+                        }
+                    }
+                }
+            }
+
+            // Try triple adjustments if depth >= 3
+            if (depth >= 3 && voices >= 4)
+            {
+                // Scale-aware triples
+                for (int j1 = 1; j1 < voices; j1++)
+                {
+                    for (int j2 = j1 + 1; j2 < voices; j2++)
+                    {
+                        for (int j3 = j2 + 1; j3 < voices; j3++)
+                        {
+                            foreach (int d1 in new[] { -1, 1 })
+                            foreach (int d2 in new[] { -1, 1 })
+                            foreach (int d3 in new[] { -1, 1 })
+                            {
+                                var candidate = new List<int>(curr);
+                                candidate[j1] = curr[j1] + d1;
+                                candidate[j2] = curr[j2] + d2;
+                                candidate[j3] = curr[j3] + d3;
+
+                                var pcs = new HashSet<int>(candidate.Select(x => ((x % 12) + 12) % 12));
+                                if (pcs.Count < voices)
+                                    continue;
+
+                                if (scale != null && scale.Count > 0)
+                                {
+                                    int pc1 = ((candidate[j1] % 12) + 12) % 12;
+                                    int pc2 = ((candidate[j2] % 12) + 12) % 12;
+                                    int pc3 = ((candidate[j3] % 12) + 12) % 12;
+                                    if (!scale.Contains(pc1) || !scale.Contains(pc2) || !scale.Contains(pc3))
+                                        continue;
+                                }
+
+                                if (Meets(candidate))
+                                    return candidate;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback triples without scale filter
+                for (int j1 = 1; j1 < voices; j1++)
+                {
+                    for (int j2 = j1 + 1; j2 < voices; j2++)
+                    {
+                        for (int j3 = j2 + 1; j3 < voices; j3++)
+                        {
+                            foreach (int d1 in new[] { -1, 1 })
+                            foreach (int d2 in new[] { -1, 1 })
+                            foreach (int d3 in new[] { -1, 1 })
+                            {
+                                var candidate = new List<int>(curr);
+                                candidate[j1] = curr[j1] + d1;
+                                candidate[j2] = curr[j2] + d2;
+                                candidate[j3] = curr[j3] + d3;
+
+                                var pcs = new HashSet<int>(candidate.Select(x => ((x % 12) + 12) % 12));
+                                if (pcs.Count < voices)
+                                    continue;
+
+                                if (Meets(candidate))
+                                    return candidate;
+                            }
+                        }
+                    }
                 }
             }
 

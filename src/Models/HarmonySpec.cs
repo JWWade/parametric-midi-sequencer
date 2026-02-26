@@ -16,6 +16,12 @@ namespace ParametricMidiSequencer.Models
     {
         // Minimum number of shared pitch classes between consecutive chords.
         public int MinSharedPitches { get; set; } = 0;
+        
+        // Control the depth of multi-voice search in transform.
+        // 1 = single voices only; 2 = single+pairs; 3+ = single+pairs+triples, etc.
+        // 0 or negative = unlimited depth (try all combinations).
+        // Default: 2 (pairs allowed for good balance).
+        public int TransformDepth { get; set; } = 2;
     }
 
     public class ChordEvent
