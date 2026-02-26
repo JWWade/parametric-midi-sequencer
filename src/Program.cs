@@ -151,7 +151,37 @@ namespace ParametricMidiSequencer
                 if (autoExtend.HasValue && meta != null)
                     meta.AutoExtend = autoExtend.Value;
                 var tracks = root.GetProperty("tracks").Deserialize<ParametricMidiSequencer.Models.TrackSpec[]>(options);
-                var usedBars = midiGenerator.GenerateFromSpec(meta ?? new ParametricMidiSequencer.Models.MetaSpec(), tracks ?? new ParametricMidiSequencer.Models.TrackSpec[0]);
+                if (tracks == null) tracks = new ParametricMidiSequencer.Models.TrackSpec[0];
+                
+                // Process harmony section if present
+                if (root.TryGetProperty("harmony", out var harmonyJson))
+                {
+                    var harmony = harmonyJson.Deserialize<ParametricMidiSequencer.Models.HarmonySpec>(options);
+                    if (harmony != null)
+                    {
+                        var harmonyEvents = ParametricMidiSequencer.Models.HarmonyGenerator.GenerateHarmonyEvents(harmony);
+                        // Add harmony events to the first track or create a new one
+                        if (tracks.Length == 0)
+                        {
+                            var harmonyTrack = new ParametricMidiSequencer.Models.TrackSpec
+                            {
+                                Name = "Harmony",
+                                Channel = harmony.Channel,
+                                Events = harmonyEvents
+                            };
+                            var tracksList = new System.Collections.Generic.List<ParametricMidiSequencer.Models.TrackSpec> { harmonyTrack };
+                            tracks = tracksList.ToArray();
+                        }
+                        else
+                        {
+                            if (tracks[0].Events == null)
+                                tracks[0].Events = new System.Collections.Generic.List<ParametricMidiSequencer.Models.ManualEvent>();
+                            tracks[0].Events.AddRange(harmonyEvents);
+                        }
+                    }
+                }
+                
+                var usedBars = midiGenerator.GenerateFromSpec(meta ?? new ParametricMidiSequencer.Models.MetaSpec(), tracks);
                 // reflect actual values used
                 finalTempo = (meta != null && meta.Tempo > 0) ? meta.Tempo : tempo;
                 finalSteps = (meta != null && meta.Steps > 0) ? meta.Steps : steps;
