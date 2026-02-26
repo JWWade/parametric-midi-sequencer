@@ -14,6 +14,8 @@ The Parametric MIDI Sequencer is a .NET 10.0 console application that generates 
 - **Percussion mapping**: Auto-map to MIDI channel 10 for drum tracks
 - **Auto-extension**: Automatically extend bars to prevent notes from being cut off
 - **Diagnostic output**: List all generated events with `--list-events` flag
+- **Harmony generation**: Specify chord progressions with scale, degree, type, inversion and constraints like shared‑pitch minimums and pitch‑center cycling (see docs/poc/* for evolving proof‑of‑concept specs)
+- **Modal interchange**: Optionally borrow chords from other modes using a `borrowMode` field on individual progression entries (per PoC7 spec)
 - **CLI overrides**: Control tempo, steps, bars, and auto-extend behavior from command line
 
 ## Project Structure

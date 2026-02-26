@@ -121,6 +121,21 @@ namespace ParametricMidiSequencer.Tests
         }
 
         [Fact]
+        public void HarmonySpec_DeserializeWithBorrowMode_PopulatesField()
+        {
+            var json = @"{
+  ""scale"": [0,2,4,5,7,9,11],
+  ""progression"": [ { ""time"":0, ""degree"":4, ""type"": "triad", ""borrowMode"": "phrygian" } ]
+}";
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var spec = JsonSerializer.Deserialize<HarmonySpec>(json, options);
+            Assert.NotNull(spec);
+            Assert.NotNull(spec.Progression);
+            Assert.Single(spec.Progression);
+            Assert.Equal("phrygian", spec.Progression[0].BorrowMode, ignoreCase: true);
+        }
+
+        [Fact]
         public void GenerateHarmonyEvents_SeventhChords_ReturnsExpectedSevenths()
         {
             var spec = BuildSeventhProgression();
@@ -137,6 +152,102 @@ namespace ParametricMidiSequencer.Tests
             Assert.Equal(new[] { 67, 71, 62, 65 }, chords[2]);
             // back to Imaj7
             Assert.Equal(new[] { 60, 64, 67, 71 }, chords[3]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_BorrowIvFromParallelMinor()
+        {
+            // C major progression where the second chord borrows iv from C minor (aeolian mode)
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },
+                    new() { Time = 4, Degree = 4, Type = "triad", BorrowMode = "aeolian" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key)
+                               .Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            // first chord unaffected
+            Assert.Equal(new[] { 60, 64, 67 }, chords[0]);
+            // borrowed iv should be F minor: F(5), Ab(8), C(0) -> +60
+            Assert.Equal(new[] { 65, 68, 60 }, chords[1]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_BorrowFlatIIFromPhrygian()
+        {
+            // Borrow ♭II from Phrygian in a C major context
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },
+                    new() { Time = 4, Degree = 2, Type = "triad", BorrowMode = "phrygian" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e=>e.TimeStep).OrderBy(g=>g.Key)
+                               .Select(g=>g.Select(e=>e.Note).ToList()).ToList();
+
+            Assert.Equal(new[] {60,64,67}, chords[0]);
+            // second chord should be Db major (♭II): Db(1), F(5), Ab(8) -> +60
+            Assert.Equal(new[] {61,65,68}, chords[1]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_BorrowedChordWithInversion()
+        {
+            // Borrow iv from Aeolian but request first inversion
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0,2,4,5,7,9,11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 4, Type = "triad", BorrowMode = "aeolian", Inversion = 1 }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chord = events.Select(e=>e.Note).ToList();
+            // F minor triad root: F(5), Ab(8), C(0)
+            // first inversion -> Ab(8), C(0+12), F(5+12) => pcs [8,0,5]+octaves -> notes [68,72,77]
+            Assert.Equal(new[] {68,72,77}, chord);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_InvalidBorrowMode_DefaultsToMajor()
+        {
+            // invalid mode name should simply fall back to default scale behavior
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0,2,4,5,7,9,11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time=0, Degree=1, Type="triad", BorrowMode="notamode" }
+                },
+                Channel=0,
+                Velocity=90,
+                Duration=4
+            };
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e=>e.TimeStep).OrderBy(g=>g.Key)
+                               .Select(g=>g.Select(e=>e.Note).ToList()).ToList();
+            // should behave like ordinary I chord
+            Assert.Equal(new[] {60,64,67}, chords[0]);
         }
 
         [Fact]

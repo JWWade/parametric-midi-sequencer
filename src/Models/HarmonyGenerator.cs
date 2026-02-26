@@ -24,7 +24,8 @@ namespace ParametricMidiSequencer.Models
             var chords = new List<List<int>>();
             foreach (var chord in harmony.Progression)
             {
-                chords.Add(BuildChord(effectiveScale, harmony.ScaleName, chord.Degree, chord.Type));
+                chords.Add(BuildChord(effectiveScale, harmony.ScaleName, chord.Degree, chord.Type,
+                    chord.BorrowMode, harmony.Root));
             }
 
             // apply transform layer if requested
@@ -376,20 +377,48 @@ namespace ParametricMidiSequencer.Models
         // Build a chord (triad or seventh) as pitch classes (0-11) based on scale degree and type.
         // Build a chord (triad or seventh) as pitch classes (0-11) based on scale degree and type.
         // `scaleName` guides interval selection when a named scale (major/minor) is used.
-        private static List<int> BuildChord(List<int> scale, string scaleName, int degree, string type)
+        // Build a chord for a progression entry.  If borrowMode is specified, ignore the
+        // provided scale/scaleName and use ModeBuilder to derive both the pitch-class
+        // set and the appropriate intervals for that mode.  rootName is passed so that
+        // modal scales can be constructed when the harmony uses named scales (it may be
+        // null when an explicit pitch-class array is provided; ModeBuilder will default
+        // to C in that case).
+        private static List<int> BuildChord(List<int> scale, string scaleName, int degree, string type,
+            string borrowMode = null, string rootName = null)
         {
             var chord = new List<int>();
-            if (degree < 1 || degree > 7 || scale == null || scale.Count == 0)
+            if (degree < 1 || degree > 7)
                 return chord;
 
             string t = (type ?? "triad").ToLowerInvariant();
-            int root = scale[degree - 1];
-            chord.Add(((root % 12) + 12) % 12);
 
-            int[] intervals = ScaleBuilder.GetIntervalsForType(scaleName, degree, t);
-            for (int i = 1; i < intervals.Length; i++)
+            if (!string.IsNullOrWhiteSpace(borrowMode))
             {
-                chord.Add(((root + intervals[i]) % 12 + 12) % 12);
+                // build from specified mode instead of primary scale
+                var modalScale = ModeBuilder.BuildModeScale(borrowMode, rootName);
+                if (modalScale == null || modalScale.Count == 0)
+                    return chord;
+
+                int root = modalScale[degree - 1];
+                chord.Add(((root % 12) + 12) % 12);
+                int[] intervals = ModeBuilder.GetIntervalsForMode(borrowMode, degree, t);
+                for (int i = 1; i < intervals.Length; i++)
+                {
+                    chord.Add(((root + intervals[i]) % 12 + 12) % 12);
+                }
+                return chord;
+            }
+
+            if (scale == null || scale.Count == 0)
+                return chord;
+
+            int standardRoot = scale[degree - 1];
+            chord.Add(((standardRoot % 12) + 12) % 12);
+
+            int[] standardIntervals = ScaleBuilder.GetIntervalsForType(scaleName, degree, t);
+            for (int i = 1; i < standardIntervals.Length; i++)
+            {
+                chord.Add(((standardRoot + standardIntervals[i]) % 12 + 12) % 12);
             }
 
             return chord;

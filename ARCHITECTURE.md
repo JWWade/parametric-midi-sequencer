@@ -4,6 +4,8 @@
 
 This document describes the high-level architecture of the Parametric MIDI Sequencer, a JSON-driven tool for generating MIDI sequences from parameterized patterns.
 
+In addition to pattern-based sequencing, recent milestones introduced a **harmony module** capable of interpreting a compact chord progression JSON. Chords are constructed from scale information (or via modal interchange when `borrowMode` is specified), passed through transform layers (shared‑pitch, pitch‑center cycling, etc.), and optionally inverted before being injected as manual events into the scheduling engine.
+
 ```mermaid
 graph TB
     subgraph Input["Input"]
@@ -23,6 +25,7 @@ graph TB
     subgraph Models["Data Models"]
         PatternSpecJson["PatternSpecJson<br/>(id, type, note, interval,<br/>velocity, duration, offset,<br/>hitsPerBar, mode, expression)"]
         ManualEvent["ManualEvent<br/>(timeStep, note, velocity,<br/>duration, channel)"]
+        HarmonySpec["HarmonySpec<br/>(scale, scaleName, root,<br/>progression,inversion,constraints)"]
     end
 
     subgraph Generator["MIDI Generation Engine"]
@@ -59,6 +62,13 @@ graph TB
     SchedulePass --> EventProcessing
     EventProcessing --> SortAndConvert
     SortAndConvert --> MidiFile
+
+    subgraph Harmony["Harmony Module"]
+        HarmonyJson["Parse harmony JSON"]
+        HarmonyGenerator["HarmonyGenerator<br/>(build chords, transforms,<br/>inversions)"]
+    end
+    HarmonyJson --> HarmonyGenerator
+    HarmonyGenerator --> EventProcessing
     
     MidiFile --> DryWetMidi
     JsonDeserializer --> JsonOutput
