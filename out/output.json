@@ -25,7 +25,7 @@
       },
       {
         "time": 4,
-        "degree": 2,
+        "degree": 4,
         "type": "seventh"
       },
       {
@@ -43,8 +43,7 @@
     "velocity": 90,
     "duration": 4,
     "constraints": {
-      "minSharedPitches": 2,
-      "transformDepth": 2
+      "minSharedPitches": 2
     }
   }
 }
