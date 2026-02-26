@@ -159,6 +159,10 @@ namespace ParametricMidiSequencer
                     var harmony = harmonyJson.Deserialize<ParametricMidiSequencer.Models.HarmonySpec>(options);
                     if (harmony != null)
                     {
+                        // Generate events from the harmony spec.  HarmonyGenerator is now
+                        // responsible for applying any transform layers defined in
+                        // `harmony.Constraints` (e.g. minSharedPitches) before creating
+                        // manual events. This keeps the scheduler unchanged.
                         var harmonyEvents = ParametricMidiSequencer.Models.HarmonyGenerator.GenerateHarmonyEvents(harmony);
                         // Add harmony events to the first track or create a new one
                         if (tracks.Length == 0)

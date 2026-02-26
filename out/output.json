@@ -2,36 +2,48 @@
   "meta": {
     "tempo": 100,
     "steps": 16,
-    "bars": 8,
-    "ppq": 480
+    "bars": 2,
+    "ppq": 480,
+    "autoExtend": false
   },
-  "tracks": [
-    {
-      "name": "Drums",
-      "channel": -1,
-      "isPercussion": true,
-      "patterns": [
-        {
-          "id": "K",
-          "type": "modulo",
-          "note": 36,
-          "interval": 8,
-          "mode": "global",
-          "velocity": 110,
-          "duration": 4,
-          "offset": 0
-        },
-        {
-          "id": "S",
-          "type": "modulo",
-          "note": 38,
-          "interval": 8,
-          "mode": "global",
-          "velocity": 100,
-          "duration": 4,
-          "offset": 4
-        }
-      ]
+  "tracks": [],
+  "harmony": {
+    "scale": [
+      0,
+      2,
+      4,
+      5,
+      7,
+      9,
+      11
+    ],
+    "progression": [
+      {
+        "time": 0,
+        "degree": 1,
+        "type": "seventh"
+      },
+      {
+        "time": 4,
+        "degree": 4,
+        "type": "seventh"
+      },
+      {
+        "time": 8,
+        "degree": 5,
+        "type": "seventh"
+      },
+      {
+        "time": 12,
+        "degree": 1,
+        "type": "seventh"
+      }
+    ],
+    "channel": 0,
+    "velocity": 90,
+    "duration": 4,
+    "constraints": {
+      "minSharedPitches": 2
     }
-  ]
+  }
 }

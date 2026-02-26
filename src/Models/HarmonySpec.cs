@@ -6,9 +6,16 @@ namespace ParametricMidiSequencer.Models
     {
         public List<int> Scale { get; set; } = new List<int>();
         public List<ChordEvent> Progression { get; set; } = new List<ChordEvent>();
+        public HarmonyConstraints Constraints { get; set; } = new HarmonyConstraints();
         public int Channel { get; set; } = 0;
         public int Velocity { get; set; } = 90;
         public double Duration { get; set; } = 4;
+    }
+
+    public class HarmonyConstraints
+    {
+        // Minimum number of shared pitch classes between consecutive chords.
+        public int MinSharedPitches { get; set; } = 0;
     }
 
     public class ChordEvent
