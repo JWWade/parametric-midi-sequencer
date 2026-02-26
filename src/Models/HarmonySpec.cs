@@ -5,6 +5,9 @@ namespace ParametricMidiSequencer.Models
     public class HarmonySpec
     {
         public List<int> Scale { get; set; } = new List<int>();
+        // Optional scale specification by name/root. If `Scale` is provided (non-empty), it takes precedence.
+        public string ScaleName { get; set; } = "major";
+        public string Root { get; set; } = "C";
         public List<ChordEvent> Progression { get; set; } = new List<ChordEvent>();
         public HarmonyConstraints Constraints { get; set; } = new HarmonyConstraints();
         public int Channel { get; set; } = 0;

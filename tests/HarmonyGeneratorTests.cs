@@ -577,5 +577,58 @@ namespace ParametricMidiSequencer.Tests
             // C first [4,7,12] → [64,67,72]
             Assert.Equal(new[] { 64, 67, 72 }, chords[3]);
         }
+
+        [Fact]
+        public void GenerateHarmonyEvents_DMajor_BuildsCorrectChords()
+        {
+            var spec = new HarmonySpec
+            {
+                // use named scale + root instead of explicit pitch-class array
+                ScaleName = "major",
+                Root = "D",
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },
+                    new() { Time = 4, Degree = 4, Type = "triad" },
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            // D major I: D(2), F#(6), A(9) -> +60 => 62,66,69
+            Assert.Equal(new[] { 62, 66, 69 }, chords[0]);
+            // G major (IV): G(7), B(11), D(2) -> +60 => 67,71,62
+            Assert.Equal(new[] { 67, 71, 62 }, chords[1]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_AMinor_BuildsCorrectSevenths()
+        {
+            var spec = new HarmonySpec
+            {
+                ScaleName = "minor",
+                Root = "A",
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "seventh" },
+                    new() { Time = 4, Degree = 3, Type = "seventh" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            // A natural minor I7 (minor7): A(9), C(0), E(4), G(7) -> +60 => 69,60,64,67
+            Assert.Equal(new[] { 69, 60, 64, 67 }, chords[0]);
+            // C major 7 (degree 3 in A minor per spec): C(0), E(4), G(7), B(11) -> +60 => 60,64,67,71
+            Assert.Equal(new[] { 60, 64, 67, 71 }, chords[1]);
+        }
     }
 }

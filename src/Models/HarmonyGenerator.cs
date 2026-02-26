@@ -11,21 +11,27 @@ namespace ParametricMidiSequencer.Models
         {
             var events = new List<ManualEvent>();
 
-            if (harmony == null || harmony.Progression == null || harmony.Scale == null)
+            if (harmony == null || harmony.Progression == null)
                 return events;
+
+            // Determine effective scale: explicit pitch-class `Scale` takes precedence,
+            // otherwise build from `ScaleName` + `Root` (backwards-compatible).
+            var effectiveScale = (harmony.Scale != null && harmony.Scale.Count > 0)
+                ? harmony.Scale
+                : ScaleBuilder.BuildScale(harmony.ScaleName, harmony.Root);
 
             // build raw chords (pitch classes) for each progression entry
             var chords = new List<List<int>>();
             foreach (var chord in harmony.Progression)
             {
-                chords.Add(BuildChord(harmony.Scale, chord.Degree, chord.Type));
+                chords.Add(BuildChord(effectiveScale, harmony.ScaleName, chord.Degree, chord.Type));
             }
 
             // apply transform layer if requested
             if (harmony.Constraints != null && harmony.Constraints.MinSharedPitches > 0)
             {
                 int depth = harmony.Constraints.TransformDepth > 0 ? harmony.Constraints.TransformDepth : int.MaxValue;
-                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, harmony.Scale, depth);
+                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, effectiveScale, depth);
             }
 
             // convert final chords into manual events, preserving original times
@@ -343,7 +349,9 @@ namespace ParametricMidiSequencer.Models
         }
 
         // Build a chord (triad or seventh) as pitch classes (0-11) based on scale degree and type.
-        private static List<int> BuildChord(List<int> scale, int degree, string type)
+        // Build a chord (triad or seventh) as pitch classes (0-11) based on scale degree and type.
+        // `scaleName` guides interval selection when a named scale (major/minor) is used.
+        private static List<int> BuildChord(List<int> scale, string scaleName, int degree, string type)
         {
             var chord = new List<int>();
             if (degree < 1 || degree > 7 || scale == null || scale.Count == 0)
@@ -353,7 +361,7 @@ namespace ParametricMidiSequencer.Models
             int root = scale[degree - 1];
             chord.Add(((root % 12) + 12) % 12);
 
-            int[] intervals = GetIntervalsForType(degree, t);
+            int[] intervals = ScaleBuilder.GetIntervalsForType(scaleName, degree, t);
             for (int i = 1; i < intervals.Length; i++)
             {
                 chord.Add(((root + intervals[i]) % 12 + 12) % 12);
@@ -362,26 +370,6 @@ namespace ParametricMidiSequencer.Models
             return chord;
         }
 
-        private static int[] GetIntervalsForType(int degree, string type)
-        {
-            if (type == "seventh")
-            {
-                // seventh chords mapping for major scale degrees
-                return degree switch
-                {
-                    1 => new[] { 0, 4, 7, 11 },   // maj7
-                    2 => new[] { 0, 3, 7, 10 },   // m7
-                    3 => new[] { 0, 3, 7, 10 },   // m7
-                    4 => new[] { 0, 4, 7, 11 },   // maj7
-                    5 => new[] { 0, 4, 7, 10 },   // dom7
-                    6 => new[] { 0, 3, 7, 10 },   // m7
-                    7 => new[] { 0, 3, 6, 10 },   // half-diminished (m7b5)
-                    _ => new[] { 0, 4, 7, 10 }
-                };
-            }
-
-            // default to triad intervals
-            return GetTriadIntervals(degree);
-        }
+        // Note: interval selection is now delegated to ScaleBuilder for major/minor support.
     }
 }
