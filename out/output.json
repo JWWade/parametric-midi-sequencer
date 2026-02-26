@@ -4,19 +4,12 @@
     "steps": 16,
     "bars": 2,
     "ppq": 480,
-    "autoExtend": false
+    "autoExtend": true
   },
   "tracks": [],
   "harmony": {
-    "scale": [
-      0,
-      2,
-      4,
-      5,
-      7,
-      9,
-      11
-    ],
+    "scaleName": "melodic minor",
+    "root": "A",
     "progression": [
       {
         "time": 0,
@@ -27,7 +20,7 @@
       {
         "time": 4,
         "degree": 4,
-        "type": "seventh",
+        "type": "triad",
         "inversion": 1
       },
       {
@@ -39,15 +32,15 @@
       {
         "time": 12,
         "degree": 1,
-        "type": "seventh",
-        "inversion": 3
+        "type": "triad",
+        "inversion": 0
       }
     ],
+    "constraints": {
+      "minSharedPitches": 2
+    },
     "channel": 0,
     "velocity": 90,
-    "duration": 4,
-    "constraints": {
-      "minSharedPitches": 1
-    }
+    "duration": 4
   }
 }

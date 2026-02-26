@@ -8,6 +8,8 @@ namespace ParametricMidiSequencer.Models
     {
         private static readonly int[] MajorIntervals = new[] { 0, 2, 4, 5, 7, 9, 11 };
         private static readonly int[] NaturalMinorIntervals = new[] { 0, 2, 3, 5, 7, 8, 10 };
+        private static readonly int[] HarmonicMinorIntervals = new[] { 0, 2, 3, 5, 7, 8, 11 };  // raised 7th
+        private static readonly int[] MelodicMinorIntervals = new[] { 0, 2, 3, 5, 7, 9, 11 };  // raised 6th & 7th
 
         public static List<int> BuildScale(string scaleName, string root)
         {
@@ -18,9 +20,13 @@ namespace ParametricMidiSequencer.Models
 
             int rootPc = ParseRoot(root);
 
-            var intervals = scaleName.ToLowerInvariant() switch
+            var intervals = (scaleName ?? "major").ToLowerInvariant() switch
             {
                 "minor" => NaturalMinorIntervals,
+                "harmonicminor" => HarmonicMinorIntervals,
+                "harmonic minor" => HarmonicMinorIntervals,
+                "melodicminor" => MelodicMinorIntervals,
+                "melodic minor" => MelodicMinorIntervals,
                 _ => MajorIntervals
             };
 
@@ -72,14 +78,44 @@ namespace ParametricMidiSequencer.Models
             };
         }
 
-        // Return intervals for triad/seventh based on scale type and degree per PoC5 rules.
+        // Return intervals for triad/seventh based on scale type and degree.
         public static int[] GetIntervalsForType(string scaleName, int degree, string type)
         {
             var t = (type ?? "triad").ToLowerInvariant();
-            var s = (scaleName ?? "major").ToLowerInvariant();
+            var s = (scaleName ?? "major").ToLowerInvariant().Replace(" ", "");  // Normalize: remove spaces
 
             if (t == "seventh")
             {
+                if (s == "harmonicminor")
+                {
+                    return degree switch
+                    {
+                        1 => new[] { 0, 3, 7, 10 },   // m7
+                        2 => new[] { 0, 3, 6, 10 },   // °7 (half-diminished)
+                        3 => new[] { 0, 4, 8, 11 },   // augmaj7
+                        4 => new[] { 0, 3, 7, 10 },   // m7
+                        5 => new[] { 0, 4, 7, 11 },   // maj7
+                        6 => new[] { 0, 3, 6, 9 },    // °7 (diminished 7th)
+                        7 => new[] { 0, 3, 6, 10 },   // °7 (half-diminished)
+                        _ => new[] { 0, 4, 7, 10 }
+                    };
+                }
+
+                if (s == "melodicminor")
+                {
+                    return degree switch
+                    {
+                        1 => new[] { 0, 3, 7, 10 },   // m7
+                        2 => new[] { 0, 3, 7, 10 },   // m7
+                        3 => new[] { 0, 4, 8, 11 },   // augmaj7
+                        4 => new[] { 0, 4, 7, 11 },   // maj7
+                        5 => new[] { 0, 4, 7, 10 },   // dom7
+                        6 => new[] { 0, 3, 6, 10 },   // °7 (half-diminished)
+                        7 => new[] { 0, 3, 6, 10 },   // °7 (half-diminished)
+                        _ => new[] { 0, 4, 7, 10 }
+                    };
+                }
+
                 if (s == "minor")
                 {
                     return degree switch
@@ -110,9 +146,39 @@ namespace ParametricMidiSequencer.Models
             }
 
             // Triad intervals
+            if (s == "harmonicminor")
+            {
+                return degree switch
+                {
+                    1 => new[] { 0, 3, 7 },  // minor
+                    2 => new[] { 0, 3, 6 },  // diminished
+                    3 => new[] { 0, 4, 8 },  // augmented
+                    4 => new[] { 0, 3, 7 },  // minor
+                    5 => new[] { 0, 4, 7 },  // major
+                    6 => new[] { 0, 3, 6 },  // diminished
+                    7 => new[] { 0, 3, 6 },  // diminished
+                    _ => new[] { 0, 3, 7 }
+                };
+            }
+
+            if (s == "melodicminor")
+            {
+                return degree switch
+                {
+                    1 => new[] { 0, 3, 7 },  // minor
+                    2 => new[] { 0, 3, 7 },  // minor
+                    3 => new[] { 0, 4, 8 },  // augmented
+                    4 => new[] { 0, 4, 7 },  // major
+                    5 => new[] { 0, 4, 7 },  // major
+                    6 => new[] { 0, 3, 6 },  // diminished
+                    7 => new[] { 0, 3, 6 },  // diminished
+                    _ => new[] { 0, 3, 7 }
+                };
+            }
+
             if (s == "minor")
             {
-                // Triad qualities per PoC5 section 5.2
+                // Triad qualities per PoC5 section 5.2 (natural minor)
                 return degree switch
                 {
                     1 => new[] { 0, 3, 7 },  // minor

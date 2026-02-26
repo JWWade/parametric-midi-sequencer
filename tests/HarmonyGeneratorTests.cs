@@ -630,5 +630,65 @@ namespace ParametricMidiSequencer.Tests
             // C major 7 (degree 3 in A minor per spec): C(0), E(4), G(7), B(11) -> +60 => 60,64,67,71
             Assert.Equal(new[] { 60, 64, 67, 71 }, chords[1]);
         }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CHarmonicMinor_BuildsCorrectTriads()
+        {
+            // C harmonic minor scale: C D Eb F G Ab B (0,2,3,5,7,8,11)
+            var spec = new HarmonySpec
+            {
+                ScaleName = "harmonic minor",
+                Root = "C",
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },  // C minor
+                    new() { Time = 4, Degree = 5, Type = "triad" },  // G major
+                    new() { Time = 8, Degree = 7, Type = "triad" }   // B diminished
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            // C minor: C(0), Eb(3), G(7) -> +60 => 60,63,67
+            Assert.Equal(new[] { 60, 63, 67 }, chords[0]);
+            // G major: G(7), B(11), D(2) -> +60 => 67,71,62
+            Assert.Equal(new[] { 67, 71, 62 }, chords[1]);
+            // B diminished: B(11), D(2), F(5) -> +60 => 71,62,65
+            Assert.Equal(new[] { 71, 62, 65 }, chords[2]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CMelodicMinor_BuildsCorrectSevenths()
+        {
+            // C melodic minor scale: C D Eb F G A B (0,2,3,5,7,9,11)
+            var spec = new HarmonySpec
+            {
+                ScaleName = "melodic minor",
+                Root = "C",
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "seventh" },  // m7
+                    new() { Time = 4, Degree = 3, Type = "seventh" },  // augmaj7
+                    new() { Time = 8, Degree = 4, Type = "seventh" }   // maj7
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            // C m7: C(0), Eb(3), G(7), Bb(10) -> +60 => 60,63,67,70
+            Assert.Equal(new[] { 60, 63, 67, 70 }, chords[0]);
+            // Eb augmented maj7: Eb(3), G(7), B(11), D(2) -> +60 => 63,67,71,62
+            Assert.Equal(new[] { 63, 67, 71, 62 }, chords[1]);
+            // F maj7: F(5), A(9), C(0), E(4) -> +60 => 65,69,60,64
+            Assert.Equal(new[] { 65, 69, 60, 64 }, chords[2]);
+        }
     }
 }
