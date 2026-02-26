@@ -690,5 +690,75 @@ namespace ParametricMidiSequencer.Tests
             // F maj7: F(5), A(9), C(0), E(4) -> +60 => 65,69,60,64
             Assert.Equal(new[] { 65, 69, 60, 64 }, chords[2]);
         }
+
+        [Fact]
+        public void GenerateHarmonyEvents_PitchCenterCycle_PositiveAndNegative()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 }, // C major
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },
+                    new() { Time = 4, Degree = 5, Type = "triad" }
+                },
+                Constraints = new HarmonyConstraints { PitchCenterCycle = 2 },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g=>g.Key).Select(g=>g.Select(e=>e.Note).ToList()).ToList();
+            // I triad shifted by +2: C->D etc: expect [62,66,69]
+            Assert.Equal(new[] { 62, 66, 69 }, chords[0]);
+            // V triad G->A (pcs 7,11,2 +2 -> 9,1,4): expect [69,61,64]
+            Assert.Equal(new[] { 69, 61, 64 }, chords[1]);
+
+            // test negative rotation
+            spec.Constraints.PitchCenterCycle = -3;
+            events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            chords = events.GroupBy(e=>e.TimeStep).OrderBy(g=>g.Key).Select(g=>g.Select(e=>e.Note).ToList()).ToList();
+            // I triad shifted down by 3 semitones: pcs 0,4,7 -> -3 -> 9,1,4 -> MIDI 69,61,64
+            Assert.Equal(new[] { 69, 61, 64 }, chords[0]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CycleThenInversion_RespectsOrder()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0,2,4,5,7,9,11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 1 }
+                },
+                Constraints = new HarmonyConstraints { PitchCenterCycle = 1 }
+            };
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chord = events.Select(e=>e.Note).ToList();
+            // original triad [0,4,7] shift+1 => [1,5,8], first inversion => [5,8,13]
+            Assert.Equal(new[] { 65, 68, 73 }, chord);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CycleWithMinShared_AndScale()
+        {
+            // start with D major, apply minShared then cycle +3
+            var spec = new HarmonySpec
+            {
+                ScaleName = "major",
+                Root = "D",
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }, // D
+                    new() { Time = 4, Degree = 5, Type = "triad" }  // A
+                },
+                Constraints = new HarmonyConstraints { MinSharedPitches = 1, PitchCenterCycle = 3 }
+            };
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e=>e.TimeStep).OrderBy(g=>g.Key).Select(g=>g.Select(e=>e.Note).ToList()).ToList();
+            // expected first chord: D triad [2,6,9]+3 => [5,9,0] => MIDI [65,69,60]
+            Assert.Equal(new[] {65,69,60}, chords[0]);
+        }
     }
 }

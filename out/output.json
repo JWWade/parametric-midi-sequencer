@@ -8,8 +8,8 @@
   },
   "tracks": [],
   "harmony": {
-    "scaleName": "melodic minor",
-    "root": "A",
+    "scaleName": "major",
+    "root": "C",
     "progression": [
       {
         "time": 0,
@@ -37,7 +37,8 @@
       }
     ],
     "constraints": {
-      "minSharedPitches": 2
+      "minSharedPitches": 2,
+      "pitchCenterCycle": 2
     },
     "channel": 0,
     "velocity": 90,

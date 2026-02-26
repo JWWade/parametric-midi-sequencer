@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "tempo": 100,
+    "steps": 16,
+    "bars": 2,
+    "ppq": 480,
+    "autoExtend": true
+  },
+
+  "tracks": [],
+
+  "harmony": {
+    "scaleName": "major",
+    "root": "C",
+
+    "progression": [
+      { "time": 0, "degree": 1, "type": "seventh", "inversion": 0 },
+      { "time": 4, "degree": 4, "type": "triad", "inversion": 1 },
+      { "time": 8, "degree": 5, "type": "seventh", "inversion": 2 },
+      { "time": 12, "degree": 1, "type": "triad", "inversion": 0 }
+    ],
+
+    "constraints": {
+      "minSharedPitches": 2,
+      "pitchCenterCycle": 2
+    },
+
+    "channel": 0,
+    "velocity": 90,
+    "duration": 4
+  }
+}

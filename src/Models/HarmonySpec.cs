@@ -25,6 +25,10 @@ namespace ParametricMidiSequencer.Models
         // 0 or negative = unlimited depth (try all combinations).
         // Default: 2 (pairs allowed for good balance).
         public int TransformDepth { get; set; } = 2;
+
+        // Additional transform: uniform semitone shift of every chord.
+        // Valid range: -11..+11. 0 means no cycling.
+        public int PitchCenterCycle { get; set; } = 0;
     }
 
     public class ChordEvent

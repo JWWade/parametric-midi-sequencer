@@ -34,6 +34,12 @@ namespace ParametricMidiSequencer.Models
                 ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, effectiveScale, depth);
             }
 
+            // second transform: pitch-center cycling
+            if (harmony.Constraints != null && harmony.Constraints.PitchCenterCycle != 0)
+            {
+                ApplyPitchCenterCycle(chords, harmony.Constraints.PitchCenterCycle);
+            }
+
             // convert final chords into manual events, preserving original times
             // Apply inversions before event generation
             for (int i = 0; i < chords.Count; i++)
@@ -277,6 +283,25 @@ namespace ParametricMidiSequencer.Models
 
             // no valid adjustment found
             return null;
+        }
+
+        #endregion
+
+        #region pitch-center cycle helper
+
+        // Uniformly rotate each chord's pitch classes by `shift` semitones (mod 12).
+        // This transform is applied after minSharedPitches but before inversion.
+        private static void ApplyPitchCenterCycle(List<List<int>> chords, int shift)
+        {
+            if (chords == null || shift == 0)
+                return;
+            int s = ((shift % 12) + 12) % 12; // normalize into 0..11
+            for (int i = 0; i < chords.Count; i++)
+            {
+                var chord = chords[i];
+                var rotated = chord.Select(pc => ((pc + s) % 12 + 12) % 12).ToList();
+                chords[i] = rotated;
+            }
         }
 
         #endregion
