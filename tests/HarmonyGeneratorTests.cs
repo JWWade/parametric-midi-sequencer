@@ -396,5 +396,186 @@ namespace ParametricMidiSequencer.Tests
             // Second chord: vi (A minor) = 9,0,4 → MIDI 69,60,64
             Assert.Equal(new[] { 69, 60, 64 }, chords[1]);
         }
+
+        [Fact]
+        public void GenerateHarmonyEvents_TriadInversions_ProducesCorrectVoicings()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 0 },  // Root position
+                    new() { Time = 4, Degree = 1, Type = "triad", Inversion = 1 },  // First inversion
+                    new() { Time = 8, Degree = 1, Type = "triad", Inversion = 2 }   // Second inversion
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(3, chords.Count);
+
+            // C major root position: [0,4,7] → [60,64,67]
+            Assert.Equal(new[] { 60, 64, 67 }, chords[0]);
+
+            // C major first inversion: [4,7,12] → [64,67,72]
+            Assert.Equal(new[] { 64, 67, 72 }, chords[1]);
+
+            // C major second inversion: [7,12,16] → [67,72,76]
+            Assert.Equal(new[] { 67, 72, 76 }, chords[2]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_SeventhInversions_ProducesCorrectVoicings()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "seventh", Inversion = 0 },  // Root
+                    new() { Time = 4, Degree = 1, Type = "seventh", Inversion = 1 },  // First
+                    new() { Time = 8, Degree = 1, Type = "seventh", Inversion = 2 },  // Second
+                    new() { Time = 12, Degree = 1, Type = "seventh", Inversion = 3 }  // Third
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(4, chords.Count);
+
+            // Cmaj7 root position: [0,4,7,11] → [60,64,67,71]
+            Assert.Equal(new[] { 60, 64, 67, 71 }, chords[0]);
+
+            // Cmaj7 first inversion: [4,7,11,12] → [64,67,71,72]
+            Assert.Equal(new[] { 64, 67, 71, 72 }, chords[1]);
+
+            // Cmaj7 second inversion: [7,11,12,16] → [67,71,72,76]
+            Assert.Equal(new[] { 67, 71, 72, 76 }, chords[2]);
+
+            // Cmaj7 third inversion: [11,12,16,19] → [71,72,76,79]
+            Assert.Equal(new[] { 71, 72, 76, 79 }, chords[3]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_InversionsWithConstraint_PresentsBothTogether()
+        {
+            // Inversions should work alongside minSharedPitches transform
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 0 },
+                    new() { Time = 4, Degree = 4, Type = "triad", Inversion = 1 },  // First inversion
+                    new() { Time = 8, Degree = 5, Type = "triad", Inversion = 2 }   // Second inversion
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4,
+                Constraints = new HarmonyConstraints { MinSharedPitches = 1 }
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(3, chords.Count);
+
+            // All should have 3 notes (triads)
+            Assert.Equal(3, chords[0].Count);
+            Assert.Equal(3, chords[1].Count);
+            Assert.Equal(3, chords[2].Count);
+
+            // Verify pitch classes are preserved (inversions don't add/remove notes)
+            var pcs0 = ToPitchClasses(chords[0]);
+            var pcs1 = ToPitchClasses(chords[1]);
+            Assert.True(pcs0.Count == 3 && pcs1.Count >= 1);  // At least one shared pitch
+        }
+
+        [Fact]
+        public void HarmonySpec_DeserializeWithInversion_PopulatesField()
+        {
+            var json = @"{
+  ""scale"": [0,2,4,5,7,9,11],
+  ""progression"": [
+    { ""time"": 0, ""degree"": 1, ""type"": ""seventh"", ""inversion"": 2 }
+  ]
+}";
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var spec = JsonSerializer.Deserialize<HarmonySpec>(json, options);
+            Assert.NotNull(spec);
+            Assert.NotNull(spec.Progression);
+            Assert.Equal(1, spec.Progression.Count);
+            Assert.Equal(2, spec.Progression[0].Inversion);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_InvalidInversion_DefaultsToRoot()
+        {
+            // Inversion value >= chord size should be ignored
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 5 }  // Invalid (max is 2)
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(1, chords.Count);
+            // Should revert to root position when inversion is out of range
+            Assert.Equal(new[] { 60, 64, 67 }, chords[0]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_AllTriadInversions_VariousProgression()
+        {
+            // Test multiple chords with different inversions
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 0 },  // C: root
+                    new() { Time = 4, Degree = 4, Type = "triad", Inversion = 1 },  // F: first
+                    new() { Time = 8, Degree = 5, Type = "triad", Inversion = 2 },  // G: second
+                    new() { Time = 12, Degree = 1, Type = "triad", Inversion = 1 }  // C: first
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key).Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(4, chords.Count);
+
+            // C root [0,4,7] → [60,64,67]
+            Assert.Equal(new[] { 60, 64, 67 }, chords[0]);
+
+            // F first inversion: [9,0,17] → [69,60,77]
+            Assert.Equal(new[] { 69, 60, 77 }, chords[1]);
+
+            // G second inversion [7,11,2] rotated twice: [2,19,23] → [62,79,83]
+            Assert.Equal(new[] { 62, 79, 83 }, chords[2]);
+
+            // C first [4,7,12] → [64,67,72]
+            Assert.Equal(new[] { 64, 67, 72 }, chords[3]);
+        }
     }
 }

@@ -21,29 +21,33 @@
       {
         "time": 0,
         "degree": 1,
-        "type": "seventh"
+        "type": "seventh",
+        "inversion": 0
       },
       {
         "time": 4,
         "degree": 4,
-        "type": "seventh"
+        "type": "seventh",
+        "inversion": 1
       },
       {
         "time": 8,
         "degree": 5,
-        "type": "seventh"
+        "type": "seventh",
+        "inversion": 2
       },
       {
         "time": 12,
         "degree": 1,
-        "type": "seventh"
+        "type": "seventh",
+        "inversion": 3
       }
     ],
     "channel": 0,
     "velocity": 90,
     "duration": 4,
     "constraints": {
-      "minSharedPitches": 2
+      "minSharedPitches": 1
     }
   }
 }

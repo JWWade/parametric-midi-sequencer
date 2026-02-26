@@ -29,5 +29,6 @@ namespace ParametricMidiSequencer.Models
         public int Time { get; set; }
         public int Degree { get; set; }
         public string Type { get; set; } = "triad";
+        public int Inversion { get; set; } = 0;  // 0=root, 1=first, 2=second, 3=third (seventh only)
     }
 }

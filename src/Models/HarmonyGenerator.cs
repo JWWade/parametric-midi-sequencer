@@ -29,11 +29,17 @@ namespace ParametricMidiSequencer.Models
             }
 
             // convert final chords into manual events, preserving original times
+            // Apply inversions before event generation
             for (int i = 0; i < chords.Count; i++)
             {
                 var chord = chords[i];
                 int time = harmony.Progression[i].Time;
-                foreach (var note in chord)
+                int inversion = harmony.Progression[i].Inversion;
+                
+                // Apply inversion if specified
+                var finalChord = ApplyInversion(chord, inversion);
+                
+                foreach (var note in finalChord)
                 {
                     events.Add(new ManualEvent
                     {
@@ -265,6 +271,36 @@ namespace ParametricMidiSequencer.Models
 
             // no valid adjustment found
             return null;
+        }
+
+        #endregion
+
+        #region inversion helpers
+
+        // Apply inversion to a chord (triad or seventh).
+        // inversion: 0=root position, 1=first, 2=second, 3=third (seventh only).
+        // Returns the reordered pitch classes with octave adjustments.
+        private static List<int> ApplyInversion(List<int> chord, int inversion)
+        {
+            if (chord == null || chord.Count < 2 || inversion <= 0)
+                return chord;  // Root position, no change
+
+            var result = new List<int>(chord);
+            int voices = chord.Count;
+
+            // Validate inversion range
+            if (inversion >= voices)
+                return chord;  // Invalid inversion, return unchanged
+
+            // Rotate by moving voices to the end and adding 12 (octave)
+            for (int i = 0; i < inversion && i < voices; i++)
+            {
+                int firstNote = result[0];
+                result.RemoveAt(0);
+                result.Add(firstNote + 12);  // Move to higher octave
+            }
+
+            return result;
         }
 
         #endregion
