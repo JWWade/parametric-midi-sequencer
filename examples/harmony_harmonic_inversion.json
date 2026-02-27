@@ -27,25 +27,25 @@
   "progression": [
     {
       "time": 0,
-      "degree": 0,
+      "degree": 1,
       "type": "triad",
       "inversion": 0
     },
     {
       "time": 3,
-      "degree": 2,
+      "degree": 3,
       "type": "triad",
       "inversion": 1
     },
     {
       "time": 6,
-      "degree": 5,
+      "degree": 6,
       "type": "triad",
       "inversion": 2
     },
     {
       "time": 9,
-      "degree": 0,
+      "degree": 1,
       "type": "triad",
       "inversion": 1
     }

@@ -53,9 +53,9 @@ namespace ParametricMidiSequencer.UI
                 RowCount = 1,
                 Padding = new Padding(0)
             };
-            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38F));
-            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32F));
-            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
+            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
             topLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             mainSplitter.Panel1.Controls.Add(topLayout);
 
@@ -186,7 +186,8 @@ namespace ParametricMidiSequencer.UI
                 SelectionMode = DataGridViewSelectionMode.CellSelect,
                 MultiSelect = false,
                 AutoGenerateColumns = false,
-                RowHeadersVisible = false
+                RowHeadersVisible = false,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
             };
 
             grid.Columns.Add(new DataGridViewTextBoxColumn
@@ -194,21 +195,24 @@ namespace ParametricMidiSequencer.UI
                 Name = nameof(ProgressionRow.Time),
                 HeaderText = "Time",
                 DataPropertyName = nameof(ProgressionRow.Time),
-                Width = 60
+                Width = 70,
+                MinimumWidth = 70
             });
             grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = nameof(ProgressionRow.Degree),
                 HeaderText = "Degree",
                 DataPropertyName = nameof(ProgressionRow.Degree),
-                Width = 60
+                Width = 70,
+                MinimumWidth = 70
             });
             grid.Columns.Add(new DataGridViewComboBoxColumn
             {
                 Name = nameof(ProgressionRow.Type),
                 HeaderText = "Type",
                 DataPropertyName = nameof(ProgressionRow.Type),
-                Width = 80,
+                Width = 100,
+                MinimumWidth = 90,
                 DataSource = new[] { "triad", "seventh" }
             });
             grid.Columns.Add(new DataGridViewComboBoxColumn
@@ -216,14 +220,16 @@ namespace ParametricMidiSequencer.UI
                 Name = nameof(ProgressionRow.Inversion),
                 HeaderText = "Inversion",
                 DataPropertyName = nameof(ProgressionRow.Inversion),
-                Width = 90
+                Width = 110,
+                MinimumWidth = 100
             });
             grid.Columns.Add(new DataGridViewComboBoxColumn
             {
                 Name = nameof(ProgressionRow.BorrowMode),
                 HeaderText = "Borrow Mode",
                 DataPropertyName = nameof(ProgressionRow.BorrowMode),
-                Width = 120,
+                Width = 140,
+                MinimumWidth = 120,
                 DataSource = BorrowModes
             });
             grid.Columns.Add(new DataGridViewButtonColumn
@@ -231,7 +237,8 @@ namespace ParametricMidiSequencer.UI
                 HeaderText = "Remove",
                 Text = "Remove",
                 UseColumnTextForButtonValue = true,
-                Width = 70
+                Width = 75,
+                MinimumWidth = 70
             });
 
             grid.CellValueChanged += ProgressionGrid_CellValueChanged;

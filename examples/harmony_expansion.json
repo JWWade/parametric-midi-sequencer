@@ -27,37 +27,37 @@
   "progression": [
     {
       "time": 0,
-      "degree": 0,
+      "degree": 1,
       "type": "triad",
       "inversion": 0
     },
     {
       "time": 2,
-      "degree": 3,
+      "degree": 4,
       "type": "triad",
       "inversion": 0
     },
     {
       "time": 4,
-      "degree": 6,
+      "degree": 7,
       "type": "seventh",
       "inversion": 0
     },
     {
       "time": 6,
-      "degree": 2,
+      "degree": 3,
       "type": "triad",
       "inversion": 1
     },
     {
       "time": 8,
-      "degree": 5,
+      "degree": 6,
       "type": "triad",
       "inversion": 0
     },
     {
       "time": 10,
-      "degree": 0,
+      "degree": 1,
       "type": "triad",
       "inversion": 0
     }
