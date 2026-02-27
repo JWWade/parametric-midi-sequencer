@@ -1216,6 +1216,9 @@ namespace ParametricMidiSequencer.Tests
 
             var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
             Assert.NotEmpty(events);
+            // For D dorian, the I triad should be D–F–A -> MIDI 62, 65, 69
+            var notes = events.Select(e => e.Note).OrderBy(n => n).ToList();
+            Assert.Equal(new[] { 62, 65, 69 }, notes);
         }
 
         [Fact]
