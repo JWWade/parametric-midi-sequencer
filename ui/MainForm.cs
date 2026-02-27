@@ -15,12 +15,12 @@ namespace ParametricMidiSequencer.UI
 {
     public partial class MainForm : Form
     {
-        private HarmonySpec _currentSpec;
-        private MetaSpec _currentMeta;
-        private string _currentJsonPath;
+        private HarmonySpec? _currentSpec;
+        private MetaSpec? _currentMeta;
+        private string _currentJsonPath = string.Empty;
         private int? _sequenceLength;
 
-        private BindingList<ProgressionRow> _progressionRows;
+        private BindingList<ProgressionRow> _progressionRows = new BindingList<ProgressionRow>();
 
         public MainForm()
         {
@@ -797,7 +797,7 @@ namespace ParametricMidiSequencer.UI
             LogMessage("UI initialized. Ready to load JSON file.");
         }
 
-        private void LoadJsonFile_Click(object sender, EventArgs e)
+        private void LoadJsonFile_Click(object? sender, EventArgs e)
         {
             var dialog = new OpenFileDialog
             {
@@ -829,17 +829,17 @@ namespace ParametricMidiSequencer.UI
                     _currentMeta = null;
                     _sequenceLength = null;
 
-                    if (rootObject.ContainsKey("meta"))
+                    if (rootObject.TryGetValue("meta", out var metaToken) && metaToken != null)
                     {
-                        _currentMeta = rootObject["meta"].ToObject<MetaSpec>(JsonSerializer.Create(settings));
+                        _currentMeta = metaToken.ToObject<MetaSpec>(JsonSerializer.Create(settings));
                         if (_currentMeta != null && _currentMeta.Steps > 0 && _currentMeta.Bars > 0)
                             _sequenceLength = _currentMeta.Steps * _currentMeta.Bars;
                     }
                     
-                    if (rootObject.ContainsKey("harmony"))
+                    if (rootObject.TryGetValue("harmony", out var harmonyToken) && harmonyToken != null)
                     {
                         // Standard format with harmony section
-                        var harmonyJson = rootObject["harmony"].ToString();
+                        var harmonyJson = harmonyToken.ToString();
                         _currentSpec = JsonConvert.DeserializeObject<HarmonySpec>(harmonyJson, settings);
                     }
                     else
@@ -982,7 +982,7 @@ Duration: {summary.Duration}";
             UpdateSummaryAndValidation();
         }
 
-        private void MinSharedPitches_ValueChanged(object sender, EventArgs e)
+        private void MinSharedPitches_ValueChanged(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -994,7 +994,7 @@ Duration: {summary.Duration}";
             DisplaySummary();
         }
 
-        private void PitchCenterCycle_ValueChanged(object sender, EventArgs e)
+        private void PitchCenterCycle_ValueChanged(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1006,7 +1006,7 @@ Duration: {summary.Duration}";
             DisplaySummary();
         }
 
-        private void ShapeTransformType_Changed(object sender, EventArgs e)
+        private void ShapeTransformType_Changed(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1066,7 +1066,7 @@ Duration: {summary.Duration}";
             DisplaySummary();
         }
 
-        private void ShapeTransformRotate_ValueChanged(object sender, EventArgs e)
+        private void ShapeTransformRotate_ValueChanged(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1081,7 +1081,7 @@ Duration: {summary.Duration}";
             DisplaySummary();
         }
 
-        private void ShapeTransformReflect_Changed(object sender, EventArgs e)
+        private void ShapeTransformReflect_Changed(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1096,7 +1096,7 @@ Duration: {summary.Duration}";
             DisplaySummary();
         }
 
-        private void ShapeTransformExpand_ValueChanged(object sender, EventArgs e)
+        private void ShapeTransformExpand_ValueChanged(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1111,7 +1111,7 @@ Duration: {summary.Duration}";
             DisplaySummary();
         }
 
-        private void ScaleType_Changed(object sender, EventArgs e)
+        private void ScaleType_Changed(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1138,21 +1138,21 @@ Duration: {summary.Duration}";
             UpdateScaleSpec();
         }
 
-        private void ScaleRoot_Changed(object sender, EventArgs e)
+        private void ScaleRoot_Changed(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
             UpdateScaleSpec();
         }
 
-        private void ScaleQuality_Changed(object sender, EventArgs e)
+        private void ScaleQuality_Changed(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
             UpdateScaleSpec();
         }
 
-        private void ScaleMode_Changed(object sender, EventArgs e)
+        private void ScaleMode_Changed(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1160,7 +1160,7 @@ Duration: {summary.Duration}";
             UpdateScaleSpec();
         }
 
-        private void ScaleCustom_TextChanged(object sender, EventArgs e)
+        private void ScaleCustom_TextChanged(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
                 return;
@@ -1263,11 +1263,8 @@ Duration: {summary.Duration}";
         }
 
 
-        private void AddChord_Click(object sender, EventArgs e)
+        private void AddChord_Click(object? sender, EventArgs e)
         {
-            if (_progressionRows == null)
-                return;
-
             int nextTime = 0;
             if (_progressionRows.Count > 0)
                 nextTime = _progressionRows.Max(r => r.Time) + 4;
@@ -1291,13 +1288,13 @@ Duration: {summary.Duration}";
             UpdateSummaryAndValidation();
         }
 
-        private void ProgressionGrid_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        private void ProgressionGrid_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
         {
             if (_progressionGrid.IsCurrentCellDirty)
                 _progressionGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
         }
 
-        private void ProgressionGrid_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private void ProgressionGrid_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0)
                 return;
@@ -1309,7 +1306,7 @@ Duration: {summary.Duration}";
             UpdateSummaryAndValidation();
         }
 
-        private void ProgressionGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void ProgressionGrid_CellContentClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0)
                 return;
@@ -1321,16 +1318,13 @@ Duration: {summary.Duration}";
             }
         }
 
-        private void ProgressionGrid_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        private void ProgressionGrid_DataError(object? sender, DataGridViewDataErrorEventArgs e)
         {
             e.ThrowException = false;
         }
 
         private void UpdateInversionCell(DataGridViewRow row)
         {
-            if (row == null)
-                return;
-
             var typeCell = row.Cells[nameof(ProgressionRow.Type)] as DataGridViewComboBoxCell;
             var inversionCell = row.Cells[nameof(ProgressionRow.Inversion)] as DataGridViewComboBoxCell;
 
@@ -1347,7 +1341,7 @@ Duration: {summary.Duration}";
 
         private void UpdateSummaryAndValidation()
         {
-            if (_currentSpec == null || _progressionRows == null)
+            if (_currentSpec == null)
                 return;
 
             bool isValid = ValidateProgression(out var validationMessage);
@@ -1380,9 +1374,10 @@ Duration: {summary.Duration}";
             }
         }
 
-        private bool ValidateProgression(out string message)
+        private bool ValidateProgression(out string? message)
         {
             message = null;
+
             var errors = new List<string>();
             var timeCounts = new Dictionary<int, int>();
 
@@ -1437,7 +1432,7 @@ Duration: {summary.Duration}";
             return true;
         }
 
-        private void GenerateMidi_Click(object sender, EventArgs e)
+        private void GenerateMidi_Click(object? sender, EventArgs e)
         {
             if (_currentSpec == null)
             {
@@ -1483,7 +1478,7 @@ Duration: {summary.Duration}";
             }
         }
 
-        private void BrowseOutputPath_Click(object sender, EventArgs e)
+        private void BrowseOutputPath_Click(object? sender, EventArgs e)
         {
             var dialog = new SaveFileDialog
             {
@@ -1540,47 +1535,47 @@ Duration: {summary.Duration}";
         };
 
         // Control references
-        private Label _pathLabel;
-        private TextBox _summaryText;
-        private TextBox _eventsText;
-        private TextBox _logText;
-        private Button _generateButton;
-        private TextBox _outputPath;
-        private DataGridView _progressionGrid;
-        private Button _addChordButton;
-        private NumericUpDown _minSharedPitchesInput;
-        private NumericUpDown _pitchCenterCycleInput;
-        private ComboBox _shapeTransformTypeCombo;
-        private Label _shapeTransformTypeDescLabel;
-        private FlowLayoutPanel _shapeTransformParamRow;
-        private Label _shapeTransformRotateLabel;
-        private NumericUpDown _shapeTransformRotateInput;
-        private Label _shapeTransformReflectLabel;
-        private ComboBox _shapeTransformReflectInput;
-        private Label _shapeTransformExpandLabel;
-        private NumericUpDown _shapeTransformExpandInput;
-        private Label _shapeTransformParamDescLabel;
-        private string _lastValidationMessage;
+        private Label _pathLabel = null!;
+        private TextBox _summaryText = null!;
+        private TextBox _eventsText = null!;
+        private TextBox _logText = null!;
+        private Button _generateButton = null!;
+        private TextBox _outputPath = null!;
+        private DataGridView _progressionGrid = null!;
+        private Button _addChordButton = null!;
+        private NumericUpDown _minSharedPitchesInput = null!;
+        private NumericUpDown _pitchCenterCycleInput = null!;
+        private ComboBox _shapeTransformTypeCombo = null!;
+        private Label _shapeTransformTypeDescLabel = null!;
+        private FlowLayoutPanel _shapeTransformParamRow = null!;
+        private Label _shapeTransformRotateLabel = null!;
+        private NumericUpDown _shapeTransformRotateInput = null!;
+        private Label _shapeTransformReflectLabel = null!;
+        private ComboBox _shapeTransformReflectInput = null!;
+        private Label _shapeTransformExpandLabel = null!;
+        private NumericUpDown _shapeTransformExpandInput = null!;
+        private Label _shapeTransformParamDescLabel = null!;
+        private string? _lastValidationMessage;
 
         // Scale editor controls
-        private ComboBox _scaleTypeCombo;
-        private Label _scaleRootLabel;
-        private ComboBox _scaleRootCombo;
-        private Label _scaleQualityLabel;
-        private ComboBox _scaleQualityCombo;
-        private Label _scaleModeLabel;
-        private ComboBox _scaleModeCombo;
-        private Label _scaleCustomLabel;
-        private TextBox _scaleCustomInput;
-        private Label _scaleDescLabel;
+        private ComboBox _scaleTypeCombo = null!;
+        private Label _scaleRootLabel = null!;
+        private ComboBox _scaleRootCombo = null!;
+        private Label _scaleQualityLabel = null!;
+        private ComboBox _scaleQualityCombo = null!;
+        private Label _scaleModeLabel = null!;
+        private ComboBox _scaleModeCombo = null!;
+        private Label _scaleCustomLabel = null!;
+        private TextBox _scaleCustomInput = null!;
+        private Label _scaleDescLabel = null!;
 
         private class ProgressionRow
         {
             public int Time { get; set; }
             public int Degree { get; set; }
-            public string Type { get; set; }
+            public string Type { get; set; } = "triad";
             public int Inversion { get; set; }
-            public string BorrowMode { get; set; }
+            public string BorrowMode { get; set; } = "none";
         }
     }
 }

@@ -84,7 +84,7 @@ namespace ParametricMidiSequencer.UI.Utilities
         /// <summary>
         /// Check if any chord uses an inversion.
         /// </summary>
-        private static bool HasInversions(List<ChordEvent> progression)
+        private static bool HasInversions(List<ChordEvent>? progression)
         {
             if (progression == null)
                 return false;
@@ -95,7 +95,7 @@ namespace ParametricMidiSequencer.UI.Utilities
         /// <summary>
         /// Count how many chords use inversions.
         /// </summary>
-        private static int CountInversions(List<ChordEvent> progression)
+        private static int CountInversions(List<ChordEvent>? progression)
         {
             if (progression == null)
                 return 0;
