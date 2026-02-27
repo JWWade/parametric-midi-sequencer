@@ -30,7 +30,7 @@ namespace ParametricMidiSequencer.UI
 
         private void InitializeUI()
         {
-            Text = "Parametric MIDI Sequencer - PoC13 UI";
+            Text = "Parametric MIDI Sequencer - PoC14 UI";
             Size = new System.Drawing.Size(1200, 820);
             MinimumSize = new System.Drawing.Size(1000, 720);
             StartPosition = FormStartPosition.CenterScreen;
@@ -153,13 +153,18 @@ namespace ParametricMidiSequencer.UI
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 9,
+                RowCount = 14,
                 AutoSize = false,
                 Padding = new Padding(0)
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -364,6 +369,154 @@ namespace ParametricMidiSequencer.UI
                 Margin = new Padding(0, 0, 0, 0)
             };
             layout.Controls.Add(pitchCenterDescLabel, 0, 8);
+
+            // ===== Geometric Transform Section =====
+            var geometricSectionLabel = new Label
+            {
+                Text = "Geometric Transform",
+                Font = new System.Drawing.Font(SystemFonts.DefaultFont, System.Drawing.FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 15, 0, 6)
+            };
+            layout.Controls.Add(geometricSectionLabel, 0, 9);
+
+            var geometricTypeRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 4)
+            };
+
+            var geometricTypeLabel = new Label
+            {
+                Text = "Geometric chord-shape transform:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0)
+            };
+
+            var geometricTypeCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 100,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            geometricTypeCombo.Items.AddRange(new object[] { "None", "Rotate", "Reflect", "Expand" });
+            geometricTypeCombo.SelectedIndex = 0;
+            geometricTypeCombo.SelectedIndexChanged += ShapeTransformType_Changed;
+            _shapeTransformTypeCombo = geometricTypeCombo;
+
+            geometricTypeRow.Controls.Add(geometricTypeLabel);
+            geometricTypeRow.Controls.Add(geometricTypeCombo);
+            layout.Controls.Add(geometricTypeRow, 0, 10);
+
+            var geometricTypeDescLabel = new Label
+            {
+                Text = "",
+                AutoSize = true,
+                ForeColor = System.Drawing.SystemColors.GrayText,
+                Margin = new Padding(0, 0, 0, 0)
+            };
+            layout.Controls.Add(geometricTypeDescLabel, 0, 11);
+            _shapeTransformTypeDescLabel = geometricTypeDescLabel;
+
+            // Parameter row (shown/hidden based on selected type)
+            var geometricParamRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 4, 0, 4),
+                Visible = false
+            };
+
+            // Rotate param
+            var rotateParamLabel = new Label
+            {
+                Text = "Rotation amount (semitones):",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0),
+                Visible = false
+            };
+            var rotateInput = new NumericUpDown
+            {
+                Minimum = -11,
+                Maximum = 11,
+                Value = 0,
+                Width = 65,
+                Margin = new Padding(0, 2, 0, 0),
+                Visible = false
+            };
+            rotateInput.ValueChanged += ShapeTransformRotate_ValueChanged;
+            _shapeTransformRotateInput = rotateInput;
+
+            // Reflect param
+            var reflectParamLabel = new Label
+            {
+                Text = "Reflection axis (pitch class):",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0),
+                Visible = false
+            };
+            var reflectInput = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 90,
+                Margin = new Padding(0, 2, 0, 0),
+                Visible = false
+            };
+            reflectInput.Items.AddRange(new object[] { "0 (C)", "1 (C#)", "2 (D)", "3 (D#)", "4 (E)", "5 (F)", "6 (F#)", "7 (G)", "8 (G#)", "9 (A)", "10 (A#)", "11 (B)" });
+            reflectInput.SelectedIndex = 0;
+            reflectInput.SelectedIndexChanged += ShapeTransformReflect_Changed;
+            _shapeTransformReflectInput = reflectInput;
+
+            // Expand param
+            var expandParamLabel = new Label
+            {
+                Text = "Expansion factor:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0),
+                Visible = false
+            };
+            var expandInput = new NumericUpDown
+            {
+                Minimum = 0.5m,
+                Maximum = 3.0m,
+                Value = 1.0m,
+                DecimalPlaces = 1,
+                Increment = 0.1m,
+                Width = 70,
+                Margin = new Padding(0, 2, 0, 0),
+                Visible = false
+            };
+            expandInput.ValueChanged += ShapeTransformExpand_ValueChanged;
+            _shapeTransformExpandInput = expandInput;
+
+            geometricParamRow.Controls.Add(rotateParamLabel);
+            geometricParamRow.Controls.Add(rotateInput);
+            geometricParamRow.Controls.Add(reflectParamLabel);
+            geometricParamRow.Controls.Add(reflectInput);
+            geometricParamRow.Controls.Add(expandParamLabel);
+            geometricParamRow.Controls.Add(expandInput);
+            layout.Controls.Add(geometricParamRow, 0, 12);
+            _shapeTransformParamRow = geometricParamRow;
+            _shapeTransformRotateLabel = rotateParamLabel;
+            _shapeTransformReflectLabel = reflectParamLabel;
+            _shapeTransformExpandLabel = expandParamLabel;
+
+            var geometricParamDescLabel = new Label
+            {
+                Text = "",
+                AutoSize = true,
+                ForeColor = System.Drawing.SystemColors.GrayText,
+                Margin = new Padding(0, 0, 0, 0),
+                Visible = false
+            };
+            layout.Controls.Add(geometricParamDescLabel, 0, 13);
+            _shapeTransformParamDescLabel = geometricParamDescLabel;
         }
 
         private void CreateRightPanel(Control parent)
@@ -624,6 +777,24 @@ Duration: {summary.Duration}";
             _pitchCenterCycleInput.Value = Math.Clamp(pitchCycle, (int)_pitchCenterCycleInput.Minimum, (int)_pitchCenterCycleInput.Maximum);
             _pitchCenterCycleInput.Enabled = true;
 
+            var shapeTransform = _currentSpec.Constraints?.ShapeTransform;
+            var shapeType = shapeTransform?.Type?.ToLowerInvariant() ?? "none";
+            string shapeDisplayItem = shapeType switch
+            {
+                "rotate" => "Rotate",
+                "reflect" => "Reflect",
+                "expand" => "Expand",
+                _ => "None"
+            };
+            _shapeTransformTypeCombo.SelectedItem = shapeDisplayItem;
+            if (shapeType == "rotate")
+                _shapeTransformRotateInput.Value = Math.Clamp((decimal)(shapeTransform?.Amount ?? 0), -11, 11);
+            else if (shapeType == "reflect")
+                _shapeTransformReflectInput.SelectedIndex = Math.Clamp(shapeTransform?.Axis ?? 0, 0, 11);
+            else if (shapeType == "expand")
+                _shapeTransformExpandInput.Value = Math.Clamp((decimal)(shapeTransform?.Amount ?? 1.0), 0.5m, 3.0m);
+            _shapeTransformTypeCombo.Enabled = true;
+
             UpdateSummaryAndValidation();
         }
 
@@ -648,6 +819,111 @@ Duration: {summary.Duration}";
                 _currentSpec.Constraints = new HarmonyConstraints();
 
             _currentSpec.Constraints.PitchCenterCycle = (int)_pitchCenterCycleInput.Value;
+            DisplaySummary();
+        }
+
+        private void ShapeTransformType_Changed(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            if (_currentSpec.Constraints == null)
+                _currentSpec.Constraints = new HarmonyConstraints();
+
+            var selected = _shapeTransformTypeCombo.SelectedItem?.ToString() ?? "None";
+
+            // Show/hide param controls based on type
+            bool showRotate = selected == "Rotate";
+            bool showReflect = selected == "Reflect";
+            bool showExpand = selected == "Expand";
+            bool showParams = showRotate || showReflect || showExpand;
+
+            _shapeTransformRotateLabel.Visible = showRotate;
+            _shapeTransformRotateInput.Visible = showRotate;
+            _shapeTransformReflectLabel.Visible = showReflect;
+            _shapeTransformReflectInput.Visible = showReflect;
+            _shapeTransformExpandLabel.Visible = showExpand;
+            _shapeTransformExpandInput.Visible = showExpand;
+            _shapeTransformParamRow.Visible = showParams;
+            _shapeTransformParamDescLabel.Visible = showParams;
+
+            // Update type description and param description
+            if (showRotate)
+            {
+                _shapeTransformTypeDescLabel.Text = "Rotates the chord shape around the chromatic circle.";
+                _shapeTransformParamDescLabel.Text = "Integer semitone shift: -11 to +11.";
+            }
+            else if (showReflect)
+            {
+                _shapeTransformTypeDescLabel.Text = "Mirrors the chord shape across the chosen axis.";
+                _shapeTransformParamDescLabel.Text = "Pitch class (0-11) to reflect across.";
+            }
+            else if (showExpand)
+            {
+                _shapeTransformTypeDescLabel.Text = "Stretches or compresses the chord\u2019s internal spacing.";
+                _shapeTransformParamDescLabel.Text = "Values >1 expand the chord shape; values <1 contract it.";
+            }
+            else
+            {
+                _shapeTransformTypeDescLabel.Text = "";
+                _shapeTransformParamDescLabel.Text = "";
+            }
+
+            // Update spec
+            if (showRotate)
+                _currentSpec.Constraints.ShapeTransform = new ShapeTransform { Type = "rotate", Amount = (double)_shapeTransformRotateInput.Value };
+            else if (showReflect)
+                _currentSpec.Constraints.ShapeTransform = new ShapeTransform { Type = "reflect", Axis = _shapeTransformReflectInput.SelectedIndex };
+            else if (showExpand)
+                _currentSpec.Constraints.ShapeTransform = new ShapeTransform { Type = "expand", Amount = (double)_shapeTransformExpandInput.Value };
+            else
+                _currentSpec.Constraints.ShapeTransform = null;
+
+            DisplaySummary();
+        }
+
+        private void ShapeTransformRotate_ValueChanged(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            if (_currentSpec.Constraints == null)
+                _currentSpec.Constraints = new HarmonyConstraints();
+
+            if (_currentSpec.Constraints.ShapeTransform == null)
+                _currentSpec.Constraints.ShapeTransform = new ShapeTransform { Type = "rotate" };
+
+            _currentSpec.Constraints.ShapeTransform.Amount = (double)_shapeTransformRotateInput.Value;
+            DisplaySummary();
+        }
+
+        private void ShapeTransformReflect_Changed(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            if (_currentSpec.Constraints == null)
+                _currentSpec.Constraints = new HarmonyConstraints();
+
+            if (_currentSpec.Constraints.ShapeTransform == null)
+                _currentSpec.Constraints.ShapeTransform = new ShapeTransform { Type = "reflect" };
+
+            _currentSpec.Constraints.ShapeTransform.Axis = _shapeTransformReflectInput.SelectedIndex;
+            DisplaySummary();
+        }
+
+        private void ShapeTransformExpand_ValueChanged(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            if (_currentSpec.Constraints == null)
+                _currentSpec.Constraints = new HarmonyConstraints();
+
+            if (_currentSpec.Constraints.ShapeTransform == null)
+                _currentSpec.Constraints.ShapeTransform = new ShapeTransform { Type = "expand" };
+
+            _currentSpec.Constraints.ShapeTransform.Amount = (double)_shapeTransformExpandInput.Value;
             DisplaySummary();
         }
 
@@ -922,6 +1198,16 @@ Duration: {summary.Duration}";
         private Button _addChordButton;
         private NumericUpDown _minSharedPitchesInput;
         private NumericUpDown _pitchCenterCycleInput;
+        private ComboBox _shapeTransformTypeCombo;
+        private Label _shapeTransformTypeDescLabel;
+        private FlowLayoutPanel _shapeTransformParamRow;
+        private Label _shapeTransformRotateLabel;
+        private NumericUpDown _shapeTransformRotateInput;
+        private Label _shapeTransformReflectLabel;
+        private ComboBox _shapeTransformReflectInput;
+        private Label _shapeTransformExpandLabel;
+        private NumericUpDown _shapeTransformExpandInput;
+        private Label _shapeTransformParamDescLabel;
         private string _lastValidationMessage;
 
         private class ProgressionRow
