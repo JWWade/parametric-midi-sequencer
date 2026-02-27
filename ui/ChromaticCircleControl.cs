@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace ParametricMidiSequencer.UI
@@ -16,6 +17,7 @@ namespace ParametricMidiSequencer.UI
             { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
         private List<int> _activePitchClasses = new();
+        private List<int>? _chordPitchClasses;
         private bool _showDegrees;
 
         /// <summary>
@@ -26,6 +28,17 @@ namespace ParametricMidiSequencer.UI
         {
             get => _activePitchClasses;
             set { _activePitchClasses = value ?? new List<int>(); Invalidate(); }
+        }
+
+        /// <summary>
+        /// The chord pitch classes (0–11) to render as a polygon on the circle.
+        /// Set to null to clear the chord shape.
+        /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public List<int>? ChordPitchClasses
+        {
+            get => _chordPitchClasses;
+            set { _chordPitchClasses = value; Invalidate(); }
         }
 
         /// <summary>
@@ -61,6 +74,25 @@ namespace ParametricMidiSequencer.UI
             float nodeRadius = Math.Max(9f, size / 14f);
 
             var activeSet = new HashSet<int>(_activePitchClasses);
+            var chordSet = _chordPitchClasses != null ? new HashSet<int>(_chordPitchClasses) : new HashSet<int>();
+            bool hasChord = chordSet.Count > 0;
+
+            // Draw chord polygon before nodes so nodes appear on top
+            if (hasChord && _chordPitchClasses!.Count >= 2)
+            {
+                var sortedPcs = _chordPitchClasses.OrderBy(pc => pc).ToList();
+                var points = sortedPcs.Select(pc =>
+                {
+                    double angle = (pc * 30.0 - 90.0) * Math.PI / 180.0;
+                    return new PointF(cx + radius * (float)Math.Cos(angle), cy + radius * (float)Math.Sin(angle));
+                }).ToArray();
+
+                using var fillBrush = new SolidBrush(Color.FromArgb(60, 255, 165, 0));
+                g.FillPolygon(fillBrush, points);
+
+                using var polyPen = new Pen(Color.DarkGoldenrod, 2.5f);
+                g.DrawPolygon(polyPen, points);
+            }
 
             for (int pc = 0; pc < 12; pc++)
             {
@@ -70,10 +102,19 @@ namespace ParametricMidiSequencer.UI
                 float ny = cy + radius * (float)Math.Sin(angle);
 
                 bool isActive = activeSet.Contains(pc);
+                bool isChordTone = chordSet.Contains(pc);
 
-                if (isActive)
+                if (isChordTone)
                 {
-                    using var fillBrush = new SolidBrush(Color.SteelBlue);
+                    using var fillBrush = new SolidBrush(Color.Goldenrod);
+                    g.FillEllipse(fillBrush, nx - nodeRadius, ny - nodeRadius, nodeRadius * 2, nodeRadius * 2);
+                    using var borderPen = new Pen(Color.SaddleBrown, 1.5f);
+                    g.DrawEllipse(borderPen, nx - nodeRadius, ny - nodeRadius, nodeRadius * 2, nodeRadius * 2);
+                }
+                else if (isActive)
+                {
+                    Color fillColor = hasChord ? Color.FromArgb(100, 70, 130, 180) : Color.SteelBlue;
+                    using var fillBrush = new SolidBrush(fillColor);
                     g.FillEllipse(fillBrush, nx - nodeRadius, ny - nodeRadius, nodeRadius * 2, nodeRadius * 2);
                     using var borderPen = new Pen(Color.DarkBlue, 1.5f);
                     g.DrawEllipse(borderPen, nx - nodeRadius, ny - nodeRadius, nodeRadius * 2, nodeRadius * 2);
@@ -93,12 +134,17 @@ namespace ParametricMidiSequencer.UI
                 {
                     int degree = _activePitchClasses.IndexOf(pc) + 1;
                     label = degree.ToString();
-                    textColor = Color.White;
+                    textColor = isChordTone ? Color.Black : Color.White;
                 }
                 else
                 {
                     label = PitchNames[pc];
-                    textColor = isActive ? Color.White : Color.Gray;
+                    if (isChordTone)
+                        textColor = Color.Black;
+                    else if (isActive)
+                        textColor = hasChord ? Color.FromArgb(160, 255, 255, 255) : Color.White;
+                    else
+                        textColor = Color.Gray;
                 }
 
                 float fontSize = Math.Max(6f, nodeRadius * 0.72f);
@@ -114,7 +160,9 @@ namespace ParametricMidiSequencer.UI
             {
                 using var legendFont = new Font(SystemFonts.DefaultFont.FontFamily, 7f, FontStyle.Regular, GraphicsUnit.Pixel);
                 using var legendBrush = new SolidBrush(SystemColors.GrayText);
-                string legend = "● active scale degrees   ○ inactive pitch classes";
+                string legend = hasChord
+                    ? "● chord tones   ● scale degrees   ○ inactive"
+                    : "● active scale degrees   ○ inactive pitch classes";
                 var legendSize = g.MeasureString(legend, legendFont);
                 g.DrawString(legend, legendFont, legendBrush, cx - legendSize.Width / 2, legendY);
             }

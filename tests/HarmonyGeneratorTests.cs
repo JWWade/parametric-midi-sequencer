@@ -1265,5 +1265,112 @@ namespace ParametricMidiSequencer.Tests
             var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
             Assert.NotEmpty(events);
         }
+
+        [Fact]
+        public void ComputeTransformedChordPitchClasses_BasicTriad_ReturnsSortedPitchClasses()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },
+                    new() { Time = 4, Degree = 5, Type = "triad" }
+                },
+                Channel = 0, Velocity = 90, Duration = 4
+            };
+
+            var result = HarmonyGenerator.ComputeTransformedChordPitchClasses(spec);
+
+            Assert.Equal(2, result.Count);
+            // C major triad: pitch classes 0, 4, 7 (sorted ascending)
+            Assert.Equal(new[] { 0, 4, 7 }, result[0]);
+            // G major triad: pitch classes 2, 7, 11 (sorted ascending)
+            Assert.Equal(new[] { 2, 7, 11 }, result[1]);
+        }
+
+        [Fact]
+        public void ComputeTransformedChordPitchClasses_PitchCenterCycle_ShiftsAllChords()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Channel = 0, Velocity = 90, Duration = 4,
+                Constraints = new HarmonyConstraints { PitchCenterCycle = 2 }
+            };
+
+            var result = HarmonyGenerator.ComputeTransformedChordPitchClasses(spec);
+
+            Assert.Single(result);
+            // C major triad [0,4,7] shifted by +2 → [2,6,9] (sorted)
+            Assert.Equal(new[] { 2, 6, 9 }, result[0]);
+        }
+
+        [Fact]
+        public void ComputeTransformedChordPitchClasses_InversionIgnored_PolygonUnchanged()
+        {
+            // Inversion should NOT affect the chord pitch-class set returned (polygon geometry is invariant)
+            var specRoot = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 0 }
+                },
+                Channel = 0, Velocity = 90, Duration = 4
+            };
+            var specInv = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 2 }
+                },
+                Channel = 0, Velocity = 90, Duration = 4
+            };
+
+            var rootPcs = HarmonyGenerator.ComputeTransformedChordPitchClasses(specRoot);
+            var invPcs  = HarmonyGenerator.ComputeTransformedChordPitchClasses(specInv);
+
+            // Polygon shape is the same regardless of inversion
+            Assert.Equal(rootPcs[0], invPcs[0]);
+        }
+
+        [Fact]
+        public void ComputeTransformedChordPitchClasses_NullOrEmpty_ReturnsEmpty()
+        {
+            Assert.Empty(HarmonyGenerator.ComputeTransformedChordPitchClasses(null));
+
+            var emptySpec = new HarmonySpec { Progression = new List<ChordEvent>() };
+            Assert.Empty(HarmonyGenerator.ComputeTransformedChordPitchClasses(emptySpec));
+        }
+
+        [Fact]
+        public void ComputeTransformedChordPitchClasses_ShapeTransformRotate_RotatesPolygon()
+        {
+            var spec = new HarmonySpec
+            {
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Channel = 0, Velocity = 90, Duration = 4,
+                Constraints = new HarmonyConstraints
+                {
+                    ShapeTransform = new ShapeTransform { Type = "rotate", Amount = 3 }
+                }
+            };
+
+            var result = HarmonyGenerator.ComputeTransformedChordPitchClasses(spec);
+
+            Assert.Single(result);
+            // C major triad [0,4,7] rotated by +3 → [3,7,10] (sorted)
+            Assert.Equal(new[] { 3, 7, 10 }, result[0]);
+        }
     }
 }

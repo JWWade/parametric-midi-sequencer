@@ -412,6 +412,7 @@ namespace ParametricMidiSequencer.UI
             grid.CellContentClick += ProgressionGrid_CellContentClick;
             grid.DataError += ProgressionGrid_DataError;
             grid.CurrentCellDirtyStateChanged += ProgressionGrid_CurrentCellDirtyStateChanged;
+            grid.SelectionChanged += ProgressionGrid_SelectionChanged;
             layout.Controls.Add(grid, 0, 5);
             _progressionGrid = grid;
 
@@ -687,7 +688,7 @@ namespace ParametricMidiSequencer.UI
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 8,
+                RowCount = 9,
                 AutoSize = false,
                 Padding = new Padding(0)
             };
@@ -698,6 +699,7 @@ namespace ParametricMidiSequencer.UI
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             panel.Controls.Add(layout);
@@ -763,6 +765,19 @@ namespace ParametricMidiSequencer.UI
             layout.Controls.Add(chromaticCircle, 0, 5);
             _chromaticCircle = chromaticCircle;
 
+            // Chord Shape label (PoC17)
+            var chordShapeLabel = new Label
+            {
+                Text = "Select a chord to view its shape",
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                ForeColor = SystemColors.GrayText,
+                Margin = new Padding(0, 4, 0, 4)
+            };
+            layout.Controls.Add(chordShapeLabel, 0, 6);
+            _chordShapeLabel = chordShapeLabel;
+
             // Events summary
             var eventsLabel = new Label
             {
@@ -771,7 +786,7 @@ namespace ParametricMidiSequencer.UI
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 8)
             };
-            layout.Controls.Add(eventsLabel, 0, 6);
+            layout.Controls.Add(eventsLabel, 0, 7);
 
             var eventsText = new TextBox
             {
@@ -783,7 +798,7 @@ namespace ParametricMidiSequencer.UI
                 ScrollBars = ScrollBars.Vertical
             };
             eventsText.Dock = DockStyle.Fill;
-            layout.Controls.Add(eventsText, 0, 7);
+            layout.Controls.Add(eventsText, 0, 8);
             _eventsText = eventsText;
         }
 
@@ -1024,6 +1039,7 @@ Duration: {summary.Duration}";
 
             _currentSpec.Constraints.MinSharedPitches = (int)_minSharedPitchesInput.Value;
             DisplaySummary();
+            UpdateChordShapeVisualization();
         }
 
         private void PitchCenterCycle_ValueChanged(object? sender, EventArgs e)
@@ -1036,6 +1052,7 @@ Duration: {summary.Duration}";
 
             _currentSpec.Constraints.PitchCenterCycle = (int)_pitchCenterCycleInput.Value;
             DisplaySummary();
+            UpdateChordShapeVisualization();
         }
 
         private void ShapeTransformType_Changed(object? sender, EventArgs e)
@@ -1096,6 +1113,7 @@ Duration: {summary.Duration}";
                 _currentSpec.Constraints.ShapeTransform = null;
 
             DisplaySummary();
+            UpdateChordShapeVisualization();
         }
 
         private void ShapeTransformRotate_ValueChanged(object? sender, EventArgs e)
@@ -1111,6 +1129,7 @@ Duration: {summary.Duration}";
 
             _currentSpec.Constraints.ShapeTransform.Amount = (double)_shapeTransformRotateInput.Value;
             DisplaySummary();
+            UpdateChordShapeVisualization();
         }
 
         private void ShapeTransformReflect_Changed(object? sender, EventArgs e)
@@ -1126,6 +1145,7 @@ Duration: {summary.Duration}";
 
             _currentSpec.Constraints.ShapeTransform.Axis = _shapeTransformReflectInput.SelectedIndex;
             DisplaySummary();
+            UpdateChordShapeVisualization();
         }
 
         private void ShapeTransformExpand_ValueChanged(object? sender, EventArgs e)
@@ -1141,6 +1161,7 @@ Duration: {summary.Duration}";
 
             _currentSpec.Constraints.ShapeTransform.Amount = (double)_shapeTransformExpandInput.Value;
             DisplaySummary();
+            UpdateChordShapeVisualization();
         }
 
         private void ScaleType_Changed(object? sender, EventArgs e)
@@ -1286,12 +1307,82 @@ Duration: {summary.Duration}";
 
             _chromaticCircle.ActivePitchClasses = activePcs;
             _chromaticCircle.ShowDegrees = _showDegreesCheck.Checked;
+            UpdateChordShapeVisualization();
         }
 
         private void ShowDegrees_CheckedChanged(object? sender, EventArgs e)
         {
             _chromaticCircle.ShowDegrees = _showDegreesCheck.Checked;
         }
+
+        private void ProgressionGrid_SelectionChanged(object? sender, EventArgs e)
+        {
+            UpdateChordShapeVisualization();
+        }
+
+        private void UpdateChordShapeVisualization()
+        {
+            if (_currentSpec == null || _progressionGrid.CurrentRow == null || !_progressionGrid.Enabled)
+            {
+                _chromaticCircle.ChordPitchClasses = null;
+                _chordShapeLabel.Text = "Select a chord to view its shape";
+                _chordShapeLabel.ForeColor = SystemColors.GrayText;
+                return;
+            }
+
+            int rowIndex = _progressionGrid.CurrentRow.Index;
+            if (rowIndex < 0 || rowIndex >= _progressionRows.Count)
+            {
+                _chromaticCircle.ChordPitchClasses = null;
+                _chordShapeLabel.Text = "Select a chord to view its shape";
+                _chordShapeLabel.ForeColor = SystemColors.GrayText;
+                return;
+            }
+
+            try
+            {
+                var allChordPcs = HarmonyGenerator.ComputeTransformedChordPitchClasses(_currentSpec);
+                if (rowIndex < allChordPcs.Count)
+                {
+                    _chromaticCircle.ChordPitchClasses = allChordPcs[rowIndex];
+
+                    var row = _progressionRows[rowIndex];
+                    int time = row.Time;
+                    int degree = row.Degree;
+                    string type = string.IsNullOrWhiteSpace(row.Type) ? "triad" : row.Type;
+                    int inversion = row.Inversion;
+
+                    string roman = degree >= 1 && degree <= 7 ? RomanNumerals[degree - 1] : degree.ToString();
+                    string chordName = type == "seventh" ? $"{roman}7" : roman;
+                    string inversionText = inversion switch
+                    {
+                        1 => " (1st inversion)",
+                        2 => " (2nd inversion)",
+                        3 => " (3rd inversion)",
+                        _ => " (root position)"
+                    };
+                    var pcs = allChordPcs[rowIndex];
+                    string pcList = string.Join(", ", pcs);
+                    _chordShapeLabel.Text = $"Chord at time {time}: {chordName}{inversionText}  [{pcList}]";
+                    _chordShapeLabel.ForeColor = SystemColors.ControlText;
+                }
+                else
+                {
+                    _chromaticCircle.ChordPitchClasses = null;
+                    _chordShapeLabel.Text = "Select a chord to view its shape";
+                    _chordShapeLabel.ForeColor = SystemColors.GrayText;
+                }
+            }
+            catch (Exception ex)
+            {
+                _chromaticCircle.ChordPitchClasses = null;
+                _chordShapeLabel.Text = "Error computing chord shape";
+                _chordShapeLabel.ForeColor = SystemColors.GrayText;
+                LogMessage($"✗ Chord shape error: {ex.Message}");
+            }
+        }
+
+        private static readonly string[] RomanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
 
         private static List<int>? ParseCustomPitchClasses(string text, out string? errorMessage)
         {
@@ -1632,6 +1723,7 @@ Duration: {summary.Duration}";
         private Label _scaleDescLabel = null!;
 
         private ChromaticCircleControl _chromaticCircle = null!;
+        private Label _chordShapeLabel = null!;
 
         private class ProgressionRow
         {
