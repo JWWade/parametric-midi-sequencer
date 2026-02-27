@@ -58,8 +58,7 @@ namespace ParametricMidiSequencer.UI.Utilities
 
             var parts = new List<string>();
 
-            if (constraints.MinSharedPitches > 0)
-                parts.Add($"minSharedPitches={constraints.MinSharedPitches}");
+            parts.Add($"minSharedPitches={constraints.MinSharedPitches}");
 
             if (constraints.PitchCenterCycle != 0)
                 parts.Add($"pitchCenterCycle={constraints.PitchCenterCycle}");

@@ -30,7 +30,7 @@ namespace ParametricMidiSequencer.UI
 
         private void InitializeUI()
         {
-            Text = "Parametric MIDI Sequencer - PoC11 UI";
+            Text = "Parametric MIDI Sequencer - PoC12 UI";
             Size = new System.Drawing.Size(1200, 820);
             MinimumSize = new System.Drawing.Size(1000, 720);
             StartPosition = FormStartPosition.CenterScreen;
@@ -153,13 +153,16 @@ namespace ParametricMidiSequencer.UI
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 3,
+                RowCount = 6,
                 AutoSize = false,
                 Padding = new Padding(0)
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             panel.Controls.Add(layout);
 
@@ -249,6 +252,57 @@ namespace ParametricMidiSequencer.UI
             addButton.Click += AddChord_Click;
             layout.Controls.Add(addButton, 0, 2);
             _addChordButton = addButton;
+
+            // ===== Voice-Leading Constraint Section =====
+            var constraintSectionLabel = new Label
+            {
+                Text = "Voice-Leading Constraint",
+                Font = new System.Drawing.Font(SystemFonts.DefaultFont, System.Drawing.FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 15, 0, 6)
+            };
+            layout.Controls.Add(constraintSectionLabel, 0, 3);
+
+            var constraintRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 4)
+            };
+
+            var minSharedLabel = new Label
+            {
+                Text = "Minimum shared pitches between chords:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0)
+            };
+
+            var minSharedInput = new NumericUpDown
+            {
+                Minimum = 0,
+                Maximum = 3,
+                Value = 0,
+                Width = 55,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            minSharedInput.ValueChanged += MinSharedPitches_ValueChanged;
+            _minSharedPitchesInput = minSharedInput;
+
+            constraintRow.Controls.Add(minSharedLabel);
+            constraintRow.Controls.Add(minSharedInput);
+            layout.Controls.Add(constraintRow, 0, 4);
+
+            var constraintDescLabel = new Label
+            {
+                Text = "Higher values create smoother voice-leading. Lower values allow more harmonic contrast.",
+                AutoSize = true,
+                ForeColor = System.Drawing.SystemColors.GrayText,
+                Margin = new Padding(0, 0, 0, 0)
+            };
+            layout.Controls.Add(constraintDescLabel, 0, 5);
         }
 
         private void CreateRightPanel(Control parent)
@@ -501,7 +555,23 @@ Duration: {summary.Duration}";
             _progressionGrid.Enabled = true;
             _addChordButton.Enabled = true;
 
+            var minShared = _currentSpec.Constraints?.MinSharedPitches ?? 0;
+            _minSharedPitchesInput.Value = Math.Clamp(minShared, (int)_minSharedPitchesInput.Minimum, (int)_minSharedPitchesInput.Maximum);
+            _minSharedPitchesInput.Enabled = true;
+
             UpdateSummaryAndValidation();
+        }
+
+        private void MinSharedPitches_ValueChanged(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            if (_currentSpec.Constraints == null)
+                _currentSpec.Constraints = new HarmonyConstraints();
+
+            _currentSpec.Constraints.MinSharedPitches = (int)_minSharedPitchesInput.Value;
+            DisplaySummary();
         }
 
         private void AddChord_Click(object sender, EventArgs e)
@@ -773,6 +843,7 @@ Duration: {summary.Duration}";
         private TextBox _outputPath;
         private DataGridView _progressionGrid;
         private Button _addChordButton;
+        private NumericUpDown _minSharedPitchesInput;
         private string _lastValidationMessage;
 
         private class ProgressionRow
