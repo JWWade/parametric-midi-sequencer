@@ -213,8 +213,19 @@ namespace ParametricMidiSequencer.UI
             scaleTypeCombo.SelectedIndex = 0;
             scaleTypeCombo.SelectedIndexChanged += ScaleType_Changed;
             _scaleTypeCombo = scaleTypeCombo;
+
+            var showDegreesCheck = new CheckBox
+            {
+                Text = "Show scale degrees",
+                AutoSize = true,
+                Margin = new Padding(14, 5, 0, 0)
+            };
+            showDegreesCheck.CheckedChanged += ShowDegrees_CheckedChanged;
+            _showDegreesCheck = showDegreesCheck;
+
             scaleTypeRow.Controls.Add(scaleTypeLabel);
             scaleTypeRow.Controls.Add(scaleTypeCombo);
+            scaleTypeRow.Controls.Add(showDegreesCheck);
             layout.Controls.Add(scaleTypeRow, 0, 1);
 
             var scaleContextRow = new FlowLayoutPanel
@@ -676,7 +687,7 @@ namespace ParametricMidiSequencer.UI
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
+                RowCount = 8,
                 AutoSize = false,
                 Padding = new Padding(0)
             };
@@ -685,6 +696,8 @@ namespace ParametricMidiSequencer.UI
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220F));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             panel.Controls.Add(layout);
@@ -732,6 +745,24 @@ namespace ParametricMidiSequencer.UI
             layout.Controls.Add(pathContainer, 0, 3);
             _outputPath = outputPath;
 
+            // Chromatic Circle section
+            var circleLabel = new Label
+            {
+                Text = "Chromatic Circle",
+                Font = new System.Drawing.Font(SystemFonts.DefaultFont, System.Drawing.FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 15, 0, 4)
+            };
+            layout.Controls.Add(circleLabel, 0, 4);
+
+            var chromaticCircle = new ChromaticCircleControl
+            {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0)
+            };
+            layout.Controls.Add(chromaticCircle, 0, 5);
+            _chromaticCircle = chromaticCircle;
+
             // Events summary
             var eventsLabel = new Label
             {
@@ -740,7 +771,7 @@ namespace ParametricMidiSequencer.UI
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 8)
             };
-            layout.Controls.Add(eventsLabel, 0, 4);
+            layout.Controls.Add(eventsLabel, 0, 6);
 
             var eventsText = new TextBox
             {
@@ -752,7 +783,7 @@ namespace ParametricMidiSequencer.UI
                 ScrollBars = ScrollBars.Vertical
             };
             eventsText.Dock = DockStyle.Fill;
-            layout.Controls.Add(eventsText, 0, 5);
+            layout.Controls.Add(eventsText, 0, 7);
             _eventsText = eventsText;
         }
 
@@ -980,6 +1011,7 @@ Duration: {summary.Duration}";
             _shapeTransformTypeCombo.Enabled = true;
 
             UpdateSummaryAndValidation();
+            UpdateChromaticCircle();
         }
 
         private void MinSharedPitches_ValueChanged(object? sender, EventArgs e)
@@ -1230,6 +1262,35 @@ Duration: {summary.Duration}";
             }
 
             DisplaySummary();
+            UpdateChromaticCircle();
+        }
+
+        private void UpdateChromaticCircle()
+        {
+            if (_currentSpec == null)
+                return;
+
+            List<int> activePcs;
+            if (_currentSpec.CustomScale != null && _currentSpec.CustomScale.Count > 0)
+            {
+                activePcs = _currentSpec.CustomScale;
+            }
+            else
+            {
+                var scaleName = _currentSpec.ScaleName ?? "major";
+                var root = _currentSpec.Root ?? "C";
+                activePcs = ModeBuilder.IsModeName(scaleName)
+                    ? ModeBuilder.BuildModeScale(scaleName, root)
+                    : ScaleBuilder.BuildScale(scaleName, root);
+            }
+
+            _chromaticCircle.ActivePitchClasses = activePcs;
+            _chromaticCircle.ShowDegrees = _showDegreesCheck.Checked;
+        }
+
+        private void ShowDegrees_CheckedChanged(object? sender, EventArgs e)
+        {
+            _chromaticCircle.ShowDegrees = _showDegreesCheck.Checked;
         }
 
         private static List<int>? ParseCustomPitchClasses(string text, out string? errorMessage)
@@ -1559,6 +1620,7 @@ Duration: {summary.Duration}";
 
         // Scale editor controls
         private ComboBox _scaleTypeCombo = null!;
+        private CheckBox _showDegreesCheck = null!;
         private Label _scaleRootLabel = null!;
         private ComboBox _scaleRootCombo = null!;
         private Label _scaleQualityLabel = null!;
@@ -1568,6 +1630,8 @@ Duration: {summary.Duration}";
         private Label _scaleCustomLabel = null!;
         private TextBox _scaleCustomInput = null!;
         private Label _scaleDescLabel = null!;
+
+        private ChromaticCircleControl _chromaticCircle = null!;
 
         private class ProgressionRow
         {
