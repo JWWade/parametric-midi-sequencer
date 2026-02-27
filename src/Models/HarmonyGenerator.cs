@@ -7,6 +7,51 @@ namespace ParametricMidiSequencer.Models
 {
     public class HarmonyGenerator
     {
+        /// <summary>
+        /// Returns the pitch-class sets (0–11) for each chord in the progression after applying
+        /// all transforms (minSharedPitches, pitchCenterCycle, shapeTransform) but before inversion.
+        /// Inversion only affects voice ordering, not polygon geometry (PoC17).
+        /// </summary>
+        public static List<List<int>> ComputeTransformedChordPitchClasses(HarmonySpec harmony)
+        {
+            if (harmony == null || harmony.Progression == null || harmony.Progression.Count == 0)
+                return new List<List<int>>();
+
+            var effectiveScale = new List<int>();
+            bool useCustomScale = (harmony.CustomScale != null && CustomScaleBuilder.IsValid(harmony.CustomScale));
+            if (useCustomScale)
+                effectiveScale = CustomScaleBuilder.Normalize(harmony.CustomScale);
+            else
+                effectiveScale = (harmony.Scale != null && harmony.Scale.Count > 0)
+                    ? harmony.Scale
+                    : ModeBuilder.IsModeName(harmony.ScaleName)
+                        ? ModeBuilder.BuildModeScale(harmony.ScaleName, harmony.Root)
+                        : ScaleBuilder.BuildScale(harmony.ScaleName, harmony.Root);
+
+            var chords = new List<List<int>>();
+            foreach (var chord in harmony.Progression)
+            {
+                string borrowMode = useCustomScale ? null : chord.BorrowMode;
+                chords.Add(BuildChord(effectiveScale, harmony.ScaleName, chord.Degree, chord.Type,
+                    borrowMode, harmony.Root, useCustomScale));
+            }
+
+            if (harmony.Constraints != null && harmony.Constraints.MinSharedPitches > 0)
+            {
+                int depth = harmony.Constraints.TransformDepth > 0 ? harmony.Constraints.TransformDepth : int.MaxValue;
+                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, effectiveScale, depth);
+            }
+
+            if (harmony.Constraints != null && harmony.Constraints.PitchCenterCycle != 0)
+                ApplyPitchCenterCycle(chords, harmony.Constraints.PitchCenterCycle);
+
+            if (harmony.Constraints != null && harmony.Constraints.ShapeTransform != null)
+                ApplyGeometricShapeTransform(chords, harmony.Constraints.ShapeTransform);
+
+            // Normalize all pitch classes to 0–11 range
+            return chords.Select(c => c.Select(pc => ((pc % 12) + 12) % 12).Distinct().OrderBy(x => x).ToList()).ToList();
+        }
+
         public static List<ManualEvent> GenerateHarmonyEvents(HarmonySpec harmony)
         {
             var events = new List<ManualEvent>();
