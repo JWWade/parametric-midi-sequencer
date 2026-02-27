@@ -29,7 +29,9 @@ namespace ParametricMidiSequencer.Models
                 // otherwise build from `ScaleName` + `Root` (backwards-compatible).
                 effectiveScale = (harmony.Scale != null && harmony.Scale.Count > 0)
                     ? harmony.Scale
-                    : ScaleBuilder.BuildScale(harmony.ScaleName, harmony.Root);
+                    : ModeBuilder.IsModeName(harmony.ScaleName)
+                        ? ModeBuilder.BuildModeScale(harmony.ScaleName, harmony.Root)
+                        : ScaleBuilder.BuildScale(harmony.ScaleName, harmony.Root);
             }
 
             // build raw chords (pitch classes) for each progression entry
@@ -449,7 +451,9 @@ namespace ParametricMidiSequencer.Models
             int standardRoot = scale[degree - 1];
             chord.Add(((standardRoot % 12) + 12) % 12);
 
-            int[] standardIntervals = ScaleBuilder.GetIntervalsForType(scaleName, degree, t);
+            int[] standardIntervals = ModeBuilder.IsModeName(scaleName)
+                ? ModeBuilder.GetIntervalsForMode(scaleName, degree, t)
+                : ScaleBuilder.GetIntervalsForType(scaleName, degree, t);
             for (int i = 1; i < standardIntervals.Length; i++)
             {
                 chord.Add(((standardRoot + standardIntervals[i]) % 12 + 12) % 12);

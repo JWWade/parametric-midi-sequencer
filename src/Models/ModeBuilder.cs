@@ -17,6 +17,13 @@ namespace ParametricMidiSequencer.Models
             { "locrian", new[] { 0,1,3,5,6,8,10 } }
         };
 
+        public static bool IsModeName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+            return ModeIntervals.ContainsKey(name.Trim());
+        }
+
         public static List<int> BuildModeScale(string modeName, string root)
         {
             if (string.IsNullOrWhiteSpace(modeName))
