@@ -4,6 +4,9 @@ namespace ParametricMidiSequencer.Models
 {
     public class HarmonySpec
     {
+        // Custom pitch-class set for PoC8. If present, overrides Scale, ScaleName, Root, and BorrowMode.
+        public List<int> CustomScale { get; set; } = null;
+        
         public List<int> Scale { get; set; } = new List<int>();
         // Optional scale specification by name/root. If `Scale` is provided (non-empty), it takes precedence.
         public string ScaleName { get; set; } = "major";
@@ -37,5 +40,8 @@ namespace ParametricMidiSequencer.Models
         public int Degree { get; set; }
         public string Type { get; set; } = "triad";
         public int Inversion { get; set; } = 0;  // 0=root, 1=first, 2=second, 3=third (seventh only)
+        // Optional modal borrow; if set, the chord will be constructed
+        // using the parallel mode of the root instead of the primary scale.
+        public string BorrowMode { get; set; } = null;
     }
 }

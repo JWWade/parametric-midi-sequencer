@@ -125,7 +125,7 @@ namespace ParametricMidiSequencer.Tests
         {
             var json = @"{
   ""scale"": [0,2,4,5,7,9,11],
-  ""progression"": [ { ""time"":0, ""degree"":4, ""type"": "triad", ""borrowMode"": "phrygian" } ]
+  ""progression"": [ { ""time"":0, ""degree"":4, ""type"": ""triad"", ""borrowMode"": ""phrygian"" } ]
 }";
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var spec = JsonSerializer.Deserialize<HarmonySpec>(json, options);
@@ -224,8 +224,8 @@ namespace ParametricMidiSequencer.Tests
             var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
             var chord = events.Select(e=>e.Note).ToList();
             // F minor triad root: F(5), Ab(8), C(0)
-            // first inversion -> Ab(8), C(0+12), F(5+12) => pcs [8,0,5]+octaves -> notes [68,72,77]
-            Assert.Equal(new[] {68,72,77}, chord);
+            // first inversion -> Ab(8), C(0+12), F(5+12) => notes [68, 60, 77]
+            Assert.Equal(new[] {68,60,77}, chord);
         }
 
         [Fact]
@@ -870,6 +870,257 @@ namespace ParametricMidiSequencer.Tests
             var chords = events.GroupBy(e=>e.TimeStep).OrderBy(g=>g.Key).Select(g=>g.Select(e=>e.Note).ToList()).ToList();
             // expected first chord: D triad [2,6,9]+3 => [5,9,0] => MIDI [65,69,60]
             Assert.Equal(new[] {65,69,60}, chords[0]);
+        }
+
+        [Fact]
+        public void HarmonySpec_DeserializeWithCustomScale_PopulatesField()
+        {
+            var json = @"{
+  ""customScale"": [0,1,5,7,8],
+  ""progression"": [ { ""time"":0, ""degree"":1, ""type"":""triad"" } ]
+}";
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var spec = JsonSerializer.Deserialize<HarmonySpec>(json, options);
+            Assert.NotNull(spec);
+            Assert.NotNull(spec.CustomScale);
+            Assert.Equal(new[] { 0, 1, 5, 7, 8 }, spec.CustomScale);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomPentatonic_BuildsTriads()
+        {
+            // Custom pentatonic scale [0,2,4,7,9]
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 2, 4, 7, 9 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },  // [0, 4, 9]
+                    new() { Time = 4, Degree = 2, Type = "triad" },  // [2, 7, 0]
+                    new() { Time = 8, Degree = 3, Type = "triad" }   // [4, 9, 2]
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key)
+                               .Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(3, chords.Count);
+            // Degree 1: indices [0, 2, 4] -> pcs [0, 4, 9] -> MIDI [60, 64, 69]
+            Assert.Equal(new[] { 60, 64, 69 }, chords[0]);
+            // Degree 2: indices [1, 3, 0] -> pcs [2, 7, 0] -> MIDI [62, 67, 60]
+            Assert.Equal(new[] { 62, 67, 60 }, chords[1]);
+            // Degree 3: indices [2, 4, 1] -> pcs [4, 9, 2] -> MIDI [64, 69, 62]
+            Assert.Equal(new[] { 64, 69, 62 }, chords[2]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomSynthetic_BuildsSevenths()
+        {
+            // Custom synthetic scale [0,1,5,7,8]
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 1, 5, 7, 8 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "seventh" },  // [0, 5, 8, 1]
+                    new() { Time = 4, Degree = 2, Type = "seventh" }   // [1, 7, 0, 5]
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key)
+                               .Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(2, chords.Count);
+            // Degree 1: indices [0, 2, 4, 6%5=1] -> pcs [0, 5, 8, 1] -> MIDI [60, 65, 68, 61]
+            Assert.Equal(new[] { 60, 65, 68, 61 }, chords[0]);
+            // Degree 2: indices [1, 3, 0, 2] -> pcs [1, 7, 0, 5] -> MIDI [61, 67, 60, 65]
+            Assert.Equal(new[] { 61, 67, 60, 65 }, chords[1]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomSymmetric_ProducesWholeTones()
+        {
+            // Custom symmetric scale [0,3,6,9] (whole tones, augmented triad)
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 3, 6, 9 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },  // [0, 6, 3]
+                    new() { Time = 4, Degree = 2, Type = "triad" }   // [3, 9, 6]
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key)
+                               .Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(2, chords.Count);
+            // Degree 1: indices [0, 2, 4%4=0] -> pcs [0, 6, 0] -> MIDI [60, 66, 60]
+            Assert.Equal(new[] { 60, 66, 60 }, chords[0]);
+            // Degree 2: indices [1, 3, 5%4=1] -> pcs [3, 9, 3] -> MIDI [63, 69, 63]
+            Assert.Equal(new[] { 63, 69, 63 }, chords[1]);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomScaleWithMinSharedPitches()
+        {
+            // Custom scale with minSharedPitches constraint
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 1, 5, 7, 8 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" },
+                    new() { Time = 4, Degree = 3, Type = "triad" }
+                },
+                Constraints = new HarmonyConstraints { MinSharedPitches = 1 },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chords = events.GroupBy(e => e.TimeStep).OrderBy(g => g.Key)
+                               .Select(g => g.Select(e => e.Note).ToList()).ToList();
+
+            Assert.Equal(2, chords.Count);
+            // Verify at least one shared pitch class between chords
+            var pcs0 = ToPitchClasses(chords[0]);
+            var pcs1 = ToPitchClasses(chords[1]);
+            var intersection = new HashSet<int>(pcs0);
+            intersection.IntersectWith(pcs1);
+            Assert.True(intersection.Count >= 1);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomScaleWithPitchCenterCycle()
+        {
+            // Custom scale with pitch-center cycling
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 2, 4, 7, 9 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Constraints = new HarmonyConstraints { PitchCenterCycle = 2 },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chord = events.Select(e => e.Note).OrderBy(n => n).ToList();
+
+            // Original triad: [0, 4, 9] + cycle +2 => [2, 6, 11] -> MIDI [62, 66, 71]
+            Assert.Equal(new[] { 62, 66, 71 }, chord);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomScaleWithInversion()
+        {
+            // Custom scale with inversion
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 1, 5, 7, 8 },
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad", Inversion = 1 }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chord = events.Select(e => e.Note).ToList();
+
+            // Original triad [0, 5, 8] -> first inversion [5, 8, 12] -> MIDI [65, 68, 72]
+            Assert.Equal(new[] { 65, 68, 72 }, chord);
+        }
+
+        [Fact]
+        public void CustomScaleBuilder_Normalize_RemovesDuplicatesAndSorts()
+        {
+            var input = new List<int> { 5, 0, 12, 5, 7, -3 };
+            var normalized = CustomScaleBuilder.Normalize(input);
+
+            // Normalized: [0, 2, 5, 7]
+            // (12 -> 0 mod 12, -3 -> 9 mod 12, then distinct and sorted)
+            Assert.Equal(new[] { 0, 5, 7, 9 }, normalized);
+        }
+
+        [Fact]
+        public void CustomScaleBuilder_IsValid_ChecksLengthAndRange()
+        {
+            // Too short
+            var invalid1 = new List<int> { 0, 5 };
+            Assert.False(CustomScaleBuilder.IsValid(invalid1));
+
+            // Valid
+            var valid = new List<int> { 0, 2, 4, 7, 9 };
+            Assert.True(CustomScaleBuilder.IsValid(valid));
+
+            // Null
+            Assert.False(CustomScaleBuilder.IsValid(null));
+        }
+
+        [Fact]
+        public void CustomScaleBuilder_BuildTriad_StacksScaleSteps()
+        {
+            var scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 };
+            var triad = CustomScaleBuilder.BuildTriad(scale, 1);
+
+            // Degree 1: indices [0, 2, 4] -> [0, 4, 7]
+            Assert.Equal(new[] { 0, 4, 7 }, triad);
+        }
+
+        [Fact]
+        public void CustomScaleBuilder_BuildSeventh_StacksFourSteps()
+        {
+            var scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 };
+            var seventh = CustomScaleBuilder.BuildSeventh(scale, 1);
+
+            // Degree 1: indices [0, 2, 4, 6] -> [0, 4, 7, 11]
+            Assert.Equal(new[] { 0, 4, 7, 11 }, seventh);
+        }
+
+        [Fact]
+        public void GenerateHarmonyEvents_CustomScaleOverridesAllOtherScales()
+        {
+            // customScale should take precedence over scale, scaleName, root
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 1, 5 },
+                Scale = new List<int> { 0, 2, 4, 5, 7, 9, 11 },  // should be ignored
+                ScaleName = "minor",  // should be ignored
+                Root = "D",  // should be ignored
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            var chord = events.Select(e => e.Note).OrderBy(n => n).ToList();
+
+            // Custom scale [0, 1, 5]: degree 1 -> [0, 5, 1] -> MIDI [60, 65, 61]
+            Assert.Equal(new[] { 60, 61, 65 }, chord);
         }
     }
 }

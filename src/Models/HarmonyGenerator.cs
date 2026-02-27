@@ -14,18 +14,32 @@ namespace ParametricMidiSequencer.Models
             if (harmony == null || harmony.Progression == null)
                 return events;
 
-            // Determine effective scale: explicit pitch-class `Scale` takes precedence,
-            // otherwise build from `ScaleName` + `Root` (backwards-compatible).
-            var effectiveScale = (harmony.Scale != null && harmony.Scale.Count > 0)
-                ? harmony.Scale
-                : ScaleBuilder.BuildScale(harmony.ScaleName, harmony.Root);
+            // PoC8: Check for custom pitch-class set first.
+            // If present and valid, use it as the effective scale and disable borrowMode.
+            var effectiveScale = new List<int>();
+            bool useCustomScale = (harmony.CustomScale != null && CustomScaleBuilder.IsValid(harmony.CustomScale));
+            
+            if (useCustomScale)
+            {
+                effectiveScale = CustomScaleBuilder.Normalize(harmony.CustomScale);
+            }
+            else
+            {
+                // Determine effective scale: explicit pitch-class `Scale` takes precedence,
+                // otherwise build from `ScaleName` + `Root` (backwards-compatible).
+                effectiveScale = (harmony.Scale != null && harmony.Scale.Count > 0)
+                    ? harmony.Scale
+                    : ScaleBuilder.BuildScale(harmony.ScaleName, harmony.Root);
+            }
 
             // build raw chords (pitch classes) for each progression entry
             var chords = new List<List<int>>();
             foreach (var chord in harmony.Progression)
             {
+                // If using custom scale, disable borrowMode
+                string borrowMode = useCustomScale ? null : chord.BorrowMode;
                 chords.Add(BuildChord(effectiveScale, harmony.ScaleName, chord.Degree, chord.Type,
-                    chord.BorrowMode, harmony.Root));
+                    borrowMode, harmony.Root, useCustomScale));
             }
 
             // apply transform layer if requested
@@ -375,22 +389,23 @@ namespace ParametricMidiSequencer.Models
         }
 
         // Build a chord (triad or seventh) as pitch classes (0-11) based on scale degree and type.
-        // Build a chord (triad or seventh) as pitch classes (0-11) based on scale degree and type.
-        // `scaleName` guides interval selection when a named scale (major/minor) is used.
-        // Build a chord for a progression entry.  If borrowMode is specified, ignore the
-        // provided scale/scaleName and use ModeBuilder to derive both the pitch-class
-        // set and the appropriate intervals for that mode.  rootName is passed so that
-        // modal scales can be constructed when the harmony uses named scales (it may be
-        // null when an explicit pitch-class array is provided; ModeBuilder will default
-        // to C in that case).
+        // If useCustomScale is true, use CustomScaleBuilder to stack scale steps.
+        // Otherwise, if borrowMode is specified, use ModeBuilder.
+        // Otherwise, use the standard scale with ScaleBuilder.
         private static List<int> BuildChord(List<int> scale, string scaleName, int degree, string type,
-            string borrowMode = null, string rootName = null)
+            string borrowMode = null, string rootName = null, bool useCustomScale = false)
         {
             var chord = new List<int>();
             if (degree < 1 || degree > 7)
                 return chord;
 
             string t = (type ?? "triad").ToLowerInvariant();
+
+            // PoC8: If using a custom scale, build via stacking scale steps
+            if (useCustomScale && scale != null && scale.Count >= 3)
+            {
+                return CustomScaleBuilder.BuildChord(scale, degree, t);
+            }
 
             if (!string.IsNullOrWhiteSpace(borrowMode))
             {
