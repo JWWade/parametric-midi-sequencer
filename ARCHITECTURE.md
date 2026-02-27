@@ -2,7 +2,7 @@
 
 ## System Overview
 
-This document describes the high-level architecture of the Parametric MIDI Sequencer, a JSON-driven tool for generating MIDI sequences from parameterized patterns.
+This document describes the high-level architecture of the Parametric MIDI Sequencer, a JSON-driven toolset for generating MIDI sequences from parameterized patterns through either a CLI flow or a Windows UI flow.
 
 In addition to pattern-based sequencing, recent milestones introduced a **harmony module** capable of interpreting a compact chord progression JSON. Chords are constructed from scale information (or via modal interchange when `borrowMode` is specified), passed through transform layers (shared‑pitch, pitch‑center cycling, etc.), and optionally inverted before being injected as manual events into the scheduling engine.
 
@@ -16,8 +16,12 @@ graph TB
         JsonDeserializer["JSON Deserializer<br/>(case-insensitive)"]
     end
 
-    subgraph CLI["CLI & Configuration"]
+    subgraph EntryPoints["Entry Points"]
         CliParser["CLI Argument Parser<br/>(--tempo, --steps, --bars,<br/>--extend, --no-extend, --out)"]
+      UiForm["WinForms UI<br/>(MainForm)"]
+    end
+
+    subgraph CLI["Configuration"]
         MetaSpec["MetaSpec<br/>(tempo, steps, bars, ppq,<br/>autoExtend)"]
         TrackSpec["TrackSpec<br/>(name, channel, patterns,<br/>events)"]
     end
@@ -50,7 +54,9 @@ graph TB
     JSONFile --> JsonDeserializer
     JsonDeserializer --> MetaSpec
     JsonDeserializer --> TrackSpec
+    JsonDeserializer --> HarmonySpec
     CliParser --> MetaSpec
+    UiForm --> HarmonySpec
     
     MetaSpec --> ScanPass
     TrackSpec --> ScanPass
@@ -85,6 +91,7 @@ graph TB
 
 ### 2. **CLI & Configuration**
 - **CliParser** (`Program.cs`): Extracts flags (tempo, steps, bars, extend, no-extend, list-events, out)
+- **MainForm** (`ui/MainForm.cs`): Interactive harmony editor and MIDI generation surface
 - **MetaSpec**: Holds global properties (tempo, steps, bars, ppq, autoExtend)
 - **TrackSpec**: Defines a MIDI track with patterns and/or manual events
 
@@ -125,6 +132,12 @@ Returns final bars used
 ### 6. **External Dependencies**
 - **DryWetMIDI**: MIDI event types, file I/O, GetNotes() for inspection
 - **System.Text.Json**: Case-insensitive deserialization for flexible JSON input
+- **Windows Forms**: Desktop UI framework for interactive editing and generation
+
+### 7. **Developer Workflows**
+- **CLI run**: `dotnet run --project src/ParametricMidiSequencer.csproj -- ...`
+- **UI run**: `dotnet run --project ui/ParametricMidiSequencer.UI.csproj`
+- **Windows helper script**: `scripts/build-latest.bat` builds the solution and launches UI on success
 
 ## Data Flow Example: JSON → MIDI
 
@@ -176,7 +189,7 @@ For each pattern:
 
 - [ ] Unit tests for scheduling (fractional offsets, clamping, triplet grids)
 - [ ] Additional pattern types (e.g., probability, stochastic)
-- [ ] Per-track velocty/channel overrides
+- [ ] Per-track velocity/channel overrides
 - [ ] Graphical editor for pattern composition
 - [ ] Support for other time signatures (not just 4/4)
 - [ ] Swing and shuffle timing options
