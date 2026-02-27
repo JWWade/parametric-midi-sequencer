@@ -8,37 +8,40 @@
   },
   "tracks": [],
   "harmony": {
-    "scaleName": "major",
-    "root": "C",
+    "customScale": [
+      0,
+      1,
+      5,
+      7,
+      8
+    ],
     "progression": [
       {
         "time": 0,
         "degree": 1,
-        "type": "seventh",
-        "inversion": 0
+        "type": "triad"
       },
       {
         "time": 4,
-        "degree": 4,
-        "type": "triad",
-        "inversion": 1
+        "degree": 3,
+        "type": "seventh"
       },
       {
         "time": 8,
         "degree": 5,
-        "type": "seventh",
-        "inversion": 2
+        "type": "triad",
+        "inversion": 1
       },
       {
         "time": 12,
-        "degree": 1,
-        "type": "triad",
-        "inversion": 0
+        "degree": 2,
+        "type": "seventh",
+        "inversion": 2
       }
     ],
     "constraints": {
-      "minSharedPitches": 2,
-      "pitchCenterCycle": 2
+      "minSharedPitches": 1,
+      "pitchCenterCycle": -3
     },
     "channel": 0,
     "velocity": 90,

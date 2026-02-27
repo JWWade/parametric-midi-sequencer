@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "Harmonic Expansion/Contraction Example",
+    "description": "Demonstrates the 'expand' transform type, which expands or contracts chord voicings around their centroid. Amount > 1 expands intervals; 0 < amount < 1 contracts them. Useful for creating dynamic harmonic opening and closing effects.",
+    "author": "Parametric MIDI Sequencer",
+    "version": "1.0"
+  },
+  
+  "scale": "major",
+  "root": "G",
+  
+  "constraints": {
+    "minSharedPitches": 1,
+    "transformDepth": 2,
+    "pitchCenterCycle": 0,
+    
+    "shapeTransform": {
+      "type": "expand",
+      "amount": 1.5
+    }
+  },
+  
+  "channel": 1,
+  "velocity": 75,
+  "duration": 2,
+  
+  "progression": [
+    {
+      "time": 0,
+      "degree": 0,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 2,
+      "degree": 3,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 4,
+      "degree": 6,
+      "type": "seventh",
+      "inversion": 0
+    },
+    {
+      "time": 6,
+      "degree": 2,
+      "type": "triad",
+      "inversion": 1
+    },
+    {
+      "time": 8,
+      "degree": 5,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 10,
+      "degree": 0,
+      "type": "triad",
+      "inversion": 0
+    }
+  ]
+}

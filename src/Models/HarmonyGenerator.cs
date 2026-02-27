@@ -55,6 +55,12 @@ namespace ParametricMidiSequencer.Models
                 ApplyPitchCenterCycle(chords, harmony.Constraints.PitchCenterCycle);
             }
 
+            // third transform: geometric shape transform (PoC9)
+            if (harmony.Constraints != null && harmony.Constraints.ShapeTransform != null)
+            {
+                ApplyGeometricShapeTransform(chords, harmony.Constraints.ShapeTransform);
+            }
+
             // convert final chords into manual events, preserving original times
             // Apply inversions before event generation
             for (int i = 0; i < chords.Count; i++)
@@ -316,6 +322,19 @@ namespace ParametricMidiSequencer.Models
                 var chord = chords[i];
                 var rotated = chord.Select(pc => ((pc + s) % 12 + 12) % 12).ToList();
                 chords[i] = rotated;
+            }
+        }
+
+        // Apply geometric shape transform (PoC9) to each chord.
+        private static void ApplyGeometricShapeTransform(List<List<int>> chords, Models.ShapeTransform transform)
+        {
+            if (chords == null || transform == null)
+                return;
+
+            for (int i = 0; i < chords.Count; i++)
+            {
+                var transformed = Models.GeometricShapeTransform.Apply(chords[i], transform);
+                chords[i] = transformed;
             }
         }
 

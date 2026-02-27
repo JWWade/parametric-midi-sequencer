@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "title": "Geometric Shape Transforms (PoC9) Example",
+    "description": "Demonstrates geometric transformations applied to harmonic structures. Chord shapes are rotated (transposed), reflected (inverted), or expanded throughout the progression, creating mathematically-driven harmonic evolution.",
+    "author": "Parametric MIDI Sequencer",
+    "version": "1.0"
+  },
+  
+  "scale": "major",
+  "root": "C",
+  
+  "constraints": {
+    "minSharedPitches": 1,
+    "transformDepth": 2,
+    "pitchCenterCycle": 0,
+    
+    "shapeTransform": {
+      "type": "rotate",
+      "amount": 2,
+      "axis": 0
+    }
+  },
+  
+  "channel": 0,
+  "velocity": 85,
+  "duration": 4,
+  
+  "progression": [
+    {
+      "time": 0,
+      "degree": 0,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 4,
+      "degree": 4,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 8,
+      "degree": 7,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 12,
+      "degree": 3,
+      "type": "triad",
+      "inversion": 0
+    }
+  ]
+}

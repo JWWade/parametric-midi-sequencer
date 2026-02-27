@@ -17,6 +17,13 @@ namespace ParametricMidiSequencer.Midi
         {
             _outputFilePath = outputFilePath;
         }
+        private HarmonySpec _harmonySpec;
+
+        public MidiGenerator(HarmonySpec harmonySpec)
+        {
+            _harmonySpec = harmonySpec;
+            _outputFilePath = null;
+        }
 
         public int GenerateFromSpec(MetaSpec meta, TrackSpec[] tracks)
         {
@@ -253,5 +260,71 @@ namespace ParametricMidiSequencer.Midi
             }
             return false;
         }
-    }
+    
+                /// <summary>
+        /// Generate a MIDI file from the loaded HarmonySpec.
+        /// </summary>
+        public MidiFile GenerateMidiFile()
+        {
+            if (_harmonySpec == null)
+                throw new InvalidOperationException("No HarmonySpec loaded.");
+
+            var midiFile = new MidiFile();
+            var trackChunk = new TrackChunk();
+
+            var harmonyEvents = HarmonyGenerator.GenerateHarmonyEvents(_harmonySpec);
+            if (harmonyEvents.Count == 0)
+            {
+                trackChunk.Events.Add(new TimeSignatureEvent(4, 4, 24, 8));
+                trackChunk.Events.Add(new SetTempoEvent(500000));
+                midiFile.Chunks.Add(trackChunk);
+                return midiFile;
+            }
+
+            var ticksPerQuarter = 480;
+            var tempo = 120;
+            var scheduled = new System.Collections.Generic.List<(long time, MidiEvent ev)>();
+
+            scheduled.Add((0L, new TimeSignatureEvent(4, 4, 24, 8)));
+            var microsecondsPerQuarter = (int)Math.Round(60000000.0 / tempo);
+            scheduled.Add((0L, new SetTempoEvent(microsecondsPerQuarter)));
+
+            foreach (var harmonyEvent in harmonyEvents)
+            {
+                var channel = (FourBitNumber)(Math.Max(0, Math.Min(15, _harmonySpec.Channel)));
+                var velocity = (SevenBitNumber)Math.Max(1, Math.Min(127, _harmonySpec.Velocity));
+                var note = (SevenBitNumber)Math.Max(0, Math.Min(127, harmonyEvent.Note));
+                
+                // TimeStep is interpreted as steps (assuming 4 steps per quarter note)
+                var noteOnTime = (long)harmonyEvent.TimeStep * (ticksPerQuarter / 4);
+                var noteDuration = (long)Math.Round(_harmonySpec.Duration * ticksPerQuarter);
+                var noteOffTime = noteOnTime + noteDuration;
+                
+                var noteOn = new NoteOnEvent(note, velocity) { Channel = channel };
+                var noteOff = new NoteOffEvent(note, (SevenBitNumber)0) { Channel = channel };
+                
+                scheduled.Add((noteOnTime, noteOn));
+                scheduled.Add((noteOffTime, noteOff));
+            }
+
+            scheduled.Sort((a, b) => {
+                var t = a.time.CompareTo(b.time);
+                if (t != 0) return t;
+                int order(MidiEvent ev) => ev switch { NoteOffEvent => -1, NoteOnEvent => 1, _ => 0 };
+                return order(a.ev).CompareTo(order(b.ev));
+            });
+
+            long lastTime = 0L;
+            foreach (var item in scheduled)
+            {
+                item.ev.DeltaTime = item.time - lastTime;
+                trackChunk.Events.Add(item.ev);
+                lastTime = item.time;
+            }
+
+            midiFile.Chunks.Add(trackChunk);
+            return midiFile;
+        }    }
 }
+
+

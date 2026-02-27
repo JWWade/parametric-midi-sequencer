@@ -32,6 +32,21 @@ namespace ParametricMidiSequencer.Models
         // Additional transform: uniform semitone shift of every chord.
         // Valid range: -11..+11. 0 means no cycling.
         public int PitchCenterCycle { get; set; } = 0;
+
+        // Geometric chord-shape transform (PoC9).
+        public ShapeTransform ShapeTransform { get; set; } = null;
+    }
+
+    public class ShapeTransform
+    {
+        // Transform type: "rotate", "reflect", or "expand"
+        public string Type { get; set; } = null;
+        
+        // Amount (for rotate and expand)
+        public double Amount { get; set; } = 0;
+        
+        // Axis pitch class (for reflect, 0-11)
+        public int Axis { get; set; } = 0;
     }
 
     public class ChordEvent

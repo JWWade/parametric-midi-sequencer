@@ -6,6 +6,8 @@ Project("{F85E285D-4B0F-4A3D-8B6D-3D4B5B1B1C6D}") = "ParametricMidiSequencer", "
 EndProject
 Project("{F85E285D-4B0F-4A3D-8B6D-3D4B5B1B1C6D}") = "ParametricMidiSequencer.Tests", "tests\ParametricMidiSequencer.Tests.csproj", "{H6G5F4E3-D2C1-B0A9-8B7A-6A5B4C3D2E1F}"
 EndProject
+Project("{F85E285D-4B0F-4A3D-8B6D-3D4B5B1B1C6D}") = "ParametricMidiSequencer.UI", "ui\ParametricMidiSequencer.UI.csproj", "{I7H6G5F4-E3D2-C1B0-A9B8-7A6B5C4D3E2F}"
+EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution
         Debug|Any CPU = Debug|Any CPU
@@ -20,5 +22,9 @@ Global
         {H6G5F4E3-D2C1-B0A9-8B7A-6A5B4C3D2E1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
         {H6G5F4E3-D2C1-B0A9-8B7A-6A5B4C3D2E1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {H6G5F4E3-D2C1-B0A9-8B7A-6A5B4C3D2E1F}.Release|Any CPU.Build.0 = Release|Any CPU
+        {I7H6G5F4-E3D2-C1B0-A9B8-7A6B5C4D3E2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {I7H6G5F4-E3D2-C1B0-A9B8-7A6B5C4D3E2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {I7H6G5F4-E3D2-C1B0-A9B8-7A6B5C4D3E2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {I7H6G5F4-E3D2-C1B0-A9B8-7A6B5C4D3E2F}.Release|Any CPU.Build.0 = Release|Any CPU
     EndGlobalSection
 EndGlobal

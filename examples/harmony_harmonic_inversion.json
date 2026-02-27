@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "title": "Harmonic Inversion Example",
+    "description": "Demonstrates the 'reflect' transform type, which inverts chords around a specified pitch axis. This creates a mirror image of the chord in pitch space, useful for creating symmetrical harmonic progressions.",
+    "author": "Parametric MIDI Sequencer",
+    "version": "1.0"
+  },
+  
+  "scale": "major",
+  "root": "C",
+  
+  "constraints": {
+    "minSharedPitches": 0,
+    "transformDepth": 3,
+    "pitchCenterCycle": 0,
+    
+    "shapeTransform": {
+      "type": "reflect",
+      "axis": 6
+    }
+  },
+  
+  "channel": 0,
+  "velocity": 80,
+  "duration": 3,
+  
+  "progression": [
+    {
+      "time": 0,
+      "degree": 0,
+      "type": "triad",
+      "inversion": 0
+    },
+    {
+      "time": 3,
+      "degree": 2,
+      "type": "triad",
+      "inversion": 1
+    },
+    {
+      "time": 6,
+      "degree": 5,
+      "type": "triad",
+      "inversion": 2
+    },
+    {
+      "time": 9,
+      "degree": 0,
+      "type": "triad",
+      "inversion": 1
+    }
+  ]
+}
