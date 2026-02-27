@@ -63,12 +63,19 @@ namespace ParametricMidiSequencer.UI.Utilities
 
             if (constraints.ShapeTransform != null && !string.IsNullOrEmpty(constraints.ShapeTransform.Type))
             {
-                var transformPart = constraints.ShapeTransform.Type.ToLowerInvariant();
-                if (constraints.ShapeTransform.Amount != 0)
-                    transformPart += $"(amount={constraints.ShapeTransform.Amount})";
-                if (constraints.ShapeTransform.Axis != 0)
-                    transformPart += $"(axis={constraints.ShapeTransform.Axis})";
+                var type = constraints.ShapeTransform.Type.ToLowerInvariant();
+                string transformPart = type switch
+                {
+                    "rotate" => $"rotate({constraints.ShapeTransform.Amount})",
+                    "reflect" => $"reflect(axis={constraints.ShapeTransform.Axis})",
+                    "expand" => $"expand({constraints.ShapeTransform.Amount})",
+                    _ => type
+                };
                 parts.Add($"shapeTransform={transformPart}");
+            }
+            else
+            {
+                parts.Add("shapeTransform=none");
             }
 
             return parts.Count > 0 ? string.Join(", ", parts) : "None";
