@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using ParametricMidiSequencer.Models;
 
 namespace ParametricMidiSequencer.UI
 {
@@ -18,6 +19,7 @@ namespace ParametricMidiSequencer.UI
 
         private List<int> _activePitchClasses = new();
         private List<int>? _chordPitchClasses;
+        private List<int>? _nextChordPitchClasses;
         private bool _showDegrees;
 
         /// <summary>
@@ -39,6 +41,17 @@ namespace ParametricMidiSequencer.UI
         {
             get => _chordPitchClasses;
             set { _chordPitchClasses = value; Invalidate(); }
+        }
+
+        /// <summary>
+        /// The pitch classes (0–11) of the next chord to render as a dimmed polygon.
+        /// Set to null to hide voice-leading lines.
+        /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public List<int>? NextChordPitchClasses
+        {
+            get => _nextChordPitchClasses;
+            set { _nextChordPitchClasses = value; Invalidate(); }
         }
 
         /// <summary>
@@ -76,6 +89,24 @@ namespace ParametricMidiSequencer.UI
             var activeSet = new HashSet<int>(_activePitchClasses);
             var chordSet = _chordPitchClasses != null ? new HashSet<int>(_chordPitchClasses) : new HashSet<int>();
             bool hasChord = chordSet.Count > 0;
+            bool hasNextChord = _nextChordPitchClasses != null && _nextChordPitchClasses.Count >= 2;
+
+            // Draw next chord polygon (dimmed) before nodes so it appears behind current polygon
+            if (hasNextChord)
+            {
+                var sortedNext = _nextChordPitchClasses!.OrderBy(pc => pc).ToList();
+                var nextPoints = sortedNext.Select(pc =>
+                {
+                    double angle = (pc * 30.0 - 90.0) * Math.PI / 180.0;
+                    return new PointF(cx + radius * (float)Math.Cos(angle), cy + radius * (float)Math.Sin(angle));
+                }).ToArray();
+
+                using var nextFillBrush = new SolidBrush(Color.FromArgb(25, 100, 200, 255));
+                g.FillPolygon(nextFillBrush, nextPoints);
+
+                using var nextPolyPen = new Pen(Color.FromArgb(100, 100, 180, 220), 1.2f);
+                g.DrawPolygon(nextPolyPen, nextPoints);
+            }
 
             // Draw chord polygon before nodes so nodes appear on top
             if (hasChord && _chordPitchClasses!.Count >= 2)
@@ -92,6 +123,23 @@ namespace ParametricMidiSequencer.UI
 
                 using var polyPen = new Pen(Color.DarkGoldenrod, 2.5f);
                 g.DrawPolygon(polyPen, points);
+            }
+
+            // Draw voice-leading lines between current and next chord tones
+            if (hasChord && hasNextChord)
+            {
+                var pairs = VoiceLeadingHelper.ComputeVoiceLeadingPairs(_chordPitchClasses!, _nextChordPitchClasses!);
+                using var vlPen = new Pen(Color.FromArgb(200, 0, 220, 220), 1.5f);
+                foreach (var (from, to) in pairs)
+                {
+                    double aFrom = (from * 30.0 - 90.0) * Math.PI / 180.0;
+                    double aTo   = (to   * 30.0 - 90.0) * Math.PI / 180.0;
+                    float x1 = cx + radius * (float)Math.Cos(aFrom);
+                    float y1 = cy + radius * (float)Math.Sin(aFrom);
+                    float x2 = cx + radius * (float)Math.Cos(aTo);
+                    float y2 = cy + radius * (float)Math.Sin(aTo);
+                    g.DrawLine(vlPen, x1, y1, x2, y2);
+                }
             }
 
             for (int pc = 0; pc < 12; pc++)
@@ -160,9 +208,11 @@ namespace ParametricMidiSequencer.UI
             {
                 using var legendFont = new Font(SystemFonts.DefaultFont.FontFamily, 7f, FontStyle.Regular, GraphicsUnit.Pixel);
                 using var legendBrush = new SolidBrush(SystemColors.GrayText);
-                string legend = hasChord
-                    ? "● chord tones   ● scale degrees   ○ inactive"
-                    : "● active scale degrees   ○ inactive pitch classes";
+                string legend = hasChord && hasNextChord
+                    ? "● chord tones   ─ voice leading   ● next chord   ○ inactive"
+                    : hasChord
+                        ? "● chord tones   ● scale degrees   ○ inactive"
+                        : "● active scale degrees   ○ inactive pitch classes";
                 var legendSize = g.MeasureString(legend, legendFont);
                 g.DrawString(legend, legendFont, legendBrush, cx - legendSize.Width / 2, legendY);
             }

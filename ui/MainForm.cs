@@ -1325,6 +1325,7 @@ Duration: {summary.Duration}";
             if (_currentSpec == null || _progressionGrid.CurrentRow == null || !_progressionGrid.Enabled)
             {
                 _chromaticCircle.ChordPitchClasses = null;
+                _chromaticCircle.NextChordPitchClasses = null;
                 _chordShapeLabel.Text = "Select a chord to view its shape";
                 _chordShapeLabel.ForeColor = SystemColors.GrayText;
                 return;
@@ -1334,6 +1335,7 @@ Duration: {summary.Duration}";
             if (rowIndex < 0 || rowIndex >= _progressionRows.Count)
             {
                 _chromaticCircle.ChordPitchClasses = null;
+                _chromaticCircle.NextChordPitchClasses = null;
                 _chordShapeLabel.Text = "Select a chord to view its shape";
                 _chordShapeLabel.ForeColor = SystemColors.GrayText;
                 return;
@@ -1345,6 +1347,9 @@ Duration: {summary.Duration}";
                 if (rowIndex < allChordPcs.Count)
                 {
                     _chromaticCircle.ChordPitchClasses = allChordPcs[rowIndex];
+
+                    bool hasNext = rowIndex + 1 < allChordPcs.Count;
+                    _chromaticCircle.NextChordPitchClasses = hasNext ? allChordPcs[rowIndex + 1] : null;
 
                     var row = _progressionRows[rowIndex];
                     int time = row.Time;
@@ -1361,14 +1366,44 @@ Duration: {summary.Duration}";
                         3 => " (3rd inversion)",
                         _ => " (root position)"
                     };
-                    var pcs = allChordPcs[rowIndex];
-                    string pcList = string.Join(", ", pcs);
-                    _chordShapeLabel.Text = $"Chord at time {time}: {chordName}{inversionText}  [{pcList}]";
+                    string vlInversionText = inversion switch
+                    {
+                        1 => " (1st inversion)",
+                        2 => " (2nd inversion)",
+                        3 => " (3rd inversion)",
+                        _ => ""
+                    };
+
+                    if (hasNext)
+                    {
+                        var nextRow = _progressionRows[rowIndex + 1];
+                        int nextTime = nextRow.Time;
+                        int nextDegree = nextRow.Degree;
+                        string nextType = string.IsNullOrWhiteSpace(nextRow.Type) ? "triad" : nextRow.Type;
+                        int nextInversion = nextRow.Inversion;
+                        string nextRoman = nextDegree >= 1 && nextDegree <= 7 ? RomanNumerals[nextDegree - 1] : nextDegree.ToString();
+                        string nextChordName = nextType == "seventh" ? $"{nextRoman}7" : nextRoman;
+                        string nextInversionText = nextInversion switch
+                        {
+                            1 => " (1st inversion)",
+                            2 => " (2nd inversion)",
+                            3 => " (3rd inversion)",
+                            _ => ""
+                        };
+                        _chordShapeLabel.Text = $"Voice‑leading: {chordName}{vlInversionText} (t={time}) → {nextChordName}{nextInversionText} (t={nextTime})";
+                    }
+                    else
+                    {
+                        var pcs = allChordPcs[rowIndex];
+                        string pcList = string.Join(", ", pcs);
+                        _chordShapeLabel.Text = $"Chord at time {time}: {chordName}{inversionText}  [{pcList}]";
+                    }
                     _chordShapeLabel.ForeColor = SystemColors.ControlText;
                 }
                 else
                 {
                     _chromaticCircle.ChordPitchClasses = null;
+                    _chromaticCircle.NextChordPitchClasses = null;
                     _chordShapeLabel.Text = "Select a chord to view its shape";
                     _chordShapeLabel.ForeColor = SystemColors.GrayText;
                 }
@@ -1376,6 +1411,7 @@ Duration: {summary.Duration}";
             catch (Exception ex)
             {
                 _chromaticCircle.ChordPitchClasses = null;
+                _chromaticCircle.NextChordPitchClasses = null;
                 _chordShapeLabel.Text = "Error computing chord shape";
                 _chordShapeLabel.ForeColor = SystemColors.GrayText;
                 LogMessage($"✗ Chord shape error: {ex.Message}");
