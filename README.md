@@ -2,11 +2,17 @@
 
 ## Overview
 
-The Parametric MIDI Sequencer is a .NET 10.0 console application that generates MIDI files from JSON pattern specifications. It supports flexible pattern definitions with modulo intervals, function-based triggers, fractional timing, and multi-track sequencing with automatic bar extension to accommodate note overflows.
+The Parametric MIDI Sequencer is a .NET 10.0 toolset for generating MIDI files from JSON pattern specifications. It includes both:
+
+- a **CLI** for scriptable generation workflows
+- a **Windows Forms UI** for interactive harmony editing, preview, and MIDI export
+
+It supports flexible pattern definitions with modulo intervals, function-based triggers, fractional timing, multi-track sequencing, and automatic bar extension to accommodate note overflows.
 
 ## Features
 
 - **JSON-based pattern definition**: Define tracks, patterns, and events in a flexible JSON format
+- **Desktop UI (WinForms)**: Edit harmony settings, progression rows, constraints, and generate MIDI interactively
 - **Modulo patterns**: Trigger notes at regular intervals (e.g., every 8 steps)
 - **Function patterns**: Play notes based on expressions like `sin(x) > 0.5`
 - **Fractional timing**: Support for fractional offsets and durations in steps
@@ -17,6 +23,7 @@ The Parametric MIDI Sequencer is a .NET 10.0 console application that generates 
 - **Harmony generation**: Specify chord progressions with scale, degree, type, inversion and constraints like shared‑pitch minimums and pitch‑center cycling (see docs/poc/* for evolving proof‑of‑concept specs)
 - **Modal interchange**: Optionally borrow chords from other modes using a `borrowMode` field on individual progression entries (per PoC7 spec)
 - **CLI overrides**: Control tempo, steps, bars, and auto-extend behavior from command line
+- **Helper scripts**: Quick build/run workflows via batch scripts in `scripts/`
 
 ## Project Structure
 
@@ -34,9 +41,17 @@ parametric-midi-sequencer
 │   │   └── PatternParser.cs                 # Legacy text parser (unused)
 │   └── Utils/
 │       └── JsonSchema.cs                    # JSON schema utilities
+├── ui/
+│   ├── Program.cs                            # WinForms entry point
+│   ├── MainForm.cs                           # Primary UI surface and interactions
+│   ├── ChromaticCircleControl.cs             # Harmonic/chromatic visual control
+│   ├── Utilities/                            # UI formatting and conversion helpers
+│   └── ParametricMidiSequencer.UI.csproj     # .NET Windows UI project
 ├── tests/
 │   ├── ParametricMidiSequencer.Tests.csproj
-│   └── PatternParserTests.cs
+│   ├── PatternParserTests.cs
+│   ├── HarmonyGeneratorTests.cs
+│   └── GeometricShapeTransformTests.cs
 ├── examples/
 │   ├── patterns.json                        # Example patterns
 │   ├── patterns3.json                       # Kick/snare alternating pattern
@@ -44,6 +59,8 @@ parametric-midi-sequencer
 │   └── patterns_triplet.json                # Triplet grid example
 ├── docs/
 │   └── initial-idea/notes.md
+├── scripts/
+│   └── build-latest.bat                      # Build solution and launch UI
 ├── ARCHITECTURE.md                          # Full system architecture with Mermaid diagram
 ├── ParametricMidiSequencer.sln
 └── README.md
@@ -61,10 +78,24 @@ parametric-midi-sequencer
 dotnet build src/ParametricMidiSequencer.csproj
 ```
 
+### Building + Launching UI (Windows)
+
+```bat
+.\scripts\build-latest.bat
+```
+
+This script builds the solution and launches the UI project on success.
+
 ### Running
 
 ```bash
 dotnet run --project src/ParametricMidiSequencer.csproj -- <inputFile.json> [options]
+```
+
+### Running the UI directly
+
+```bash
+dotnet run --project ui/ParametricMidiSequencer.UI.csproj
 ```
 
 ### Basic Example
