@@ -1199,7 +1199,13 @@ Duration: {summary.Duration}";
                     _scaleDescLabel.ForeColor = System.Drawing.SystemColors.GrayText;
                     _scaleDescLabel.Text = "Enter at least 3 pitch classes. Duplicates will be removed.";
                 }
-                if (isValid)
+                if (string.IsNullOrWhiteSpace(_scaleCustomInput.Text))
+                {
+                    // When the custom pitch-class input is cleared, also clear the custom scale
+                    _currentSpec.CustomScale = null;
+                    _currentSpec.Scale = new List<int>();
+                }
+                else if (isValid)
                 {
                     _currentSpec.CustomScale = parsed;
                     _currentSpec.Scale = new List<int>();
