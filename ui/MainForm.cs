@@ -30,7 +30,7 @@ namespace ParametricMidiSequencer.UI
 
         private void InitializeUI()
         {
-            Text = "Parametric MIDI Sequencer - PoC12 UI";
+            Text = "Parametric MIDI Sequencer - PoC13 UI";
             Size = new System.Drawing.Size(1200, 820);
             MinimumSize = new System.Drawing.Size(1000, 720);
             StartPosition = FormStartPosition.CenterScreen;
@@ -153,13 +153,16 @@ namespace ParametricMidiSequencer.UI
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
+                RowCount = 9,
                 AutoSize = false,
                 Padding = new Padding(0)
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -310,6 +313,57 @@ namespace ParametricMidiSequencer.UI
                 Margin = new Padding(0, 0, 0, 0)
             };
             layout.Controls.Add(constraintDescLabel, 0, 5);
+
+            // ===== Pitch-Center Cycling Section =====
+            var pitchCenterSectionLabel = new Label
+            {
+                Text = "Pitch-Center Cycling",
+                Font = new System.Drawing.Font(SystemFonts.DefaultFont, System.Drawing.FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 15, 0, 6)
+            };
+            layout.Controls.Add(pitchCenterSectionLabel, 0, 6);
+
+            var pitchCenterRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 4)
+            };
+
+            var pitchCenterLabel = new Label
+            {
+                Text = "Pitch-center rotation (semitones):",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0)
+            };
+
+            var pitchCenterInput = new NumericUpDown
+            {
+                Minimum = -11,
+                Maximum = 11,
+                Value = 0,
+                Width = 55,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            pitchCenterInput.ValueChanged += PitchCenterCycle_ValueChanged;
+            _pitchCenterCycleInput = pitchCenterInput;
+
+            pitchCenterRow.Controls.Add(pitchCenterLabel);
+            pitchCenterRow.Controls.Add(pitchCenterInput);
+            layout.Controls.Add(pitchCenterRow, 0, 7);
+
+            var pitchCenterDescLabel = new Label
+            {
+                Text = "Rotates all chords around the chromatic circle. Positive values shift upward; negative values shift downward.",
+                AutoSize = true,
+                ForeColor = System.Drawing.SystemColors.GrayText,
+                Margin = new Padding(0, 0, 0, 0)
+            };
+            layout.Controls.Add(pitchCenterDescLabel, 0, 8);
         }
 
         private void CreateRightPanel(Control parent)
@@ -566,6 +620,10 @@ Duration: {summary.Duration}";
             _minSharedPitchesInput.Value = Math.Clamp(minShared, (int)_minSharedPitchesInput.Minimum, (int)_minSharedPitchesInput.Maximum);
             _minSharedPitchesInput.Enabled = true;
 
+            var pitchCycle = _currentSpec.Constraints?.PitchCenterCycle ?? 0;
+            _pitchCenterCycleInput.Value = Math.Clamp(pitchCycle, (int)_pitchCenterCycleInput.Minimum, (int)_pitchCenterCycleInput.Maximum);
+            _pitchCenterCycleInput.Enabled = true;
+
             UpdateSummaryAndValidation();
         }
 
@@ -578,6 +636,18 @@ Duration: {summary.Duration}";
                 _currentSpec.Constraints = new HarmonyConstraints();
 
             _currentSpec.Constraints.MinSharedPitches = (int)_minSharedPitchesInput.Value;
+            DisplaySummary();
+        }
+
+        private void PitchCenterCycle_ValueChanged(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            if (_currentSpec.Constraints == null)
+                _currentSpec.Constraints = new HarmonyConstraints();
+
+            _currentSpec.Constraints.PitchCenterCycle = (int)_pitchCenterCycleInput.Value;
             DisplaySummary();
         }
 
@@ -851,6 +921,7 @@ Duration: {summary.Duration}";
         private DataGridView _progressionGrid;
         private Button _addChordButton;
         private NumericUpDown _minSharedPitchesInput;
+        private NumericUpDown _pitchCenterCycleInput;
         private string _lastValidationMessage;
 
         private class ProgressionRow
