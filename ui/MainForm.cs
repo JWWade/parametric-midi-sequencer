@@ -30,7 +30,7 @@ namespace ParametricMidiSequencer.UI
 
         private void InitializeUI()
         {
-            Text = "Parametric MIDI Sequencer - PoC14 UI";
+            Text = "Parametric MIDI Sequencer - PoC15 UI";
             Size = new System.Drawing.Size(1200, 820);
             MinimumSize = new System.Drawing.Size(1000, 720);
             StartPosition = FormStartPosition.CenterScreen;
@@ -153,26 +153,174 @@ namespace ParametricMidiSequencer.UI
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 14,
+                RowCount = 18,
                 AutoSize = false,
                 Padding = new Padding(0)
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 0: Scale title
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 1: Scale type
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 2: Scale context
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 3: Scale desc
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 4: Progression title
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // 5: Grid
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 6: Add Chord
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 7
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 8
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 9
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 10
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 11
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 12
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 13
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 14
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 15
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 16
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 17
             panel.Controls.Add(layout);
+
+            // ===== Scale / Mode Section =====
+            var scaleSectionLabel = new Label
+            {
+                Text = "Scale / Mode",
+                Font = new System.Drawing.Font(SystemFonts.DefaultFont, System.Drawing.FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 6)
+            };
+            layout.Controls.Add(scaleSectionLabel, 0, 0);
+
+            var scaleTypeRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 4)
+            };
+            var scaleTypeLabel = new Label
+            {
+                Text = "Scale Type:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 6, 0)
+            };
+            var scaleTypeCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 180,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            scaleTypeCombo.Items.AddRange(new object[] { "Major / Minor", "Mode", "Custom Pitch-Class Set" });
+            scaleTypeCombo.SelectedIndex = 0;
+            scaleTypeCombo.SelectedIndexChanged += ScaleType_Changed;
+            _scaleTypeCombo = scaleTypeCombo;
+            scaleTypeRow.Controls.Add(scaleTypeLabel);
+            scaleTypeRow.Controls.Add(scaleTypeCombo);
+            layout.Controls.Add(scaleTypeRow, 0, 1);
+
+            var scaleContextRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 4)
+            };
+            var scaleRootLabel = new Label
+            {
+                Text = "Root:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 4, 0)
+            };
+            var scaleRootCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 65,
+                Enabled = false,
+                Margin = new Padding(0, 2, 10, 0)
+            };
+            scaleRootCombo.Items.AddRange(NoteNames);
+            scaleRootCombo.SelectedIndex = 0;
+            scaleRootCombo.SelectedIndexChanged += ScaleRoot_Changed;
+            _scaleRootLabel = scaleRootLabel;
+            _scaleRootCombo = scaleRootCombo;
+
+            var scaleQualityLabel = new Label
+            {
+                Text = "Quality:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 4, 0)
+            };
+            var scaleQualityCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 80,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            scaleQualityCombo.Items.AddRange(new object[] { "Major", "Minor" });
+            scaleQualityCombo.SelectedIndex = 0;
+            scaleQualityCombo.SelectedIndexChanged += ScaleQuality_Changed;
+            _scaleQualityLabel = scaleQualityLabel;
+            _scaleQualityCombo = scaleQualityCombo;
+
+            var scaleModeLabel = new Label
+            {
+                Text = "Mode:",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 4, 0),
+                Visible = false
+            };
+            var scaleModeCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 120,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0),
+                Visible = false
+            };
+            scaleModeCombo.Items.AddRange(new object[] { "Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian" });
+            scaleModeCombo.SelectedIndex = 0;
+            scaleModeCombo.SelectedIndexChanged += ScaleMode_Changed;
+            _scaleModeLabel = scaleModeLabel;
+            _scaleModeCombo = scaleModeCombo;
+
+            var scaleCustomLabel = new Label
+            {
+                Text = "Pitch classes (0\u201311):",
+                AutoSize = true,
+                Margin = new Padding(0, 5, 4, 0),
+                Visible = false
+            };
+            var scaleCustomInput = new TextBox
+            {
+                Width = 200,
+                Enabled = false,
+                Margin = new Padding(0, 2, 0, 0),
+                Visible = false
+            };
+            scaleCustomInput.TextChanged += ScaleCustom_TextChanged;
+            _scaleCustomLabel = scaleCustomLabel;
+            _scaleCustomInput = scaleCustomInput;
+
+            scaleContextRow.Controls.Add(scaleRootLabel);
+            scaleContextRow.Controls.Add(scaleRootCombo);
+            scaleContextRow.Controls.Add(scaleQualityLabel);
+            scaleContextRow.Controls.Add(scaleQualityCombo);
+            scaleContextRow.Controls.Add(scaleModeLabel);
+            scaleContextRow.Controls.Add(scaleModeCombo);
+            scaleContextRow.Controls.Add(scaleCustomLabel);
+            scaleContextRow.Controls.Add(scaleCustomInput);
+            layout.Controls.Add(scaleContextRow, 0, 2);
+
+            var scaleDescLabel = new Label
+            {
+                Text = "",
+                AutoSize = true,
+                ForeColor = System.Drawing.SystemColors.GrayText,
+                Margin = new Padding(0, 0, 0, 10)
+            };
+            layout.Controls.Add(scaleDescLabel, 0, 3);
+            _scaleDescLabel = scaleDescLabel;
 
             var titleLabel = new Label
             {
@@ -181,7 +329,7 @@ namespace ParametricMidiSequencer.UI
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 10)
             };
-            layout.Controls.Add(titleLabel, 0, 0);
+            layout.Controls.Add(titleLabel, 0, 4);
 
             var grid = new DataGridView
             {
@@ -253,7 +401,7 @@ namespace ParametricMidiSequencer.UI
             grid.CellContentClick += ProgressionGrid_CellContentClick;
             grid.DataError += ProgressionGrid_DataError;
             grid.CurrentCellDirtyStateChanged += ProgressionGrid_CurrentCellDirtyStateChanged;
-            layout.Controls.Add(grid, 0, 1);
+            layout.Controls.Add(grid, 0, 5);
             _progressionGrid = grid;
 
             var addButton = new Button
@@ -265,7 +413,7 @@ namespace ParametricMidiSequencer.UI
                 Margin = new Padding(0, 10, 0, 0)
             };
             addButton.Click += AddChord_Click;
-            layout.Controls.Add(addButton, 0, 2);
+            layout.Controls.Add(addButton, 0, 6);
             _addChordButton = addButton;
 
             // ===== Voice-Leading Constraint Section =====
@@ -276,7 +424,7 @@ namespace ParametricMidiSequencer.UI
                 AutoSize = true,
                 Margin = new Padding(0, 15, 0, 6)
             };
-            layout.Controls.Add(constraintSectionLabel, 0, 3);
+            layout.Controls.Add(constraintSectionLabel, 0, 7);
 
             var constraintRow = new FlowLayoutPanel
             {
@@ -308,7 +456,7 @@ namespace ParametricMidiSequencer.UI
 
             constraintRow.Controls.Add(minSharedLabel);
             constraintRow.Controls.Add(minSharedInput);
-            layout.Controls.Add(constraintRow, 0, 4);
+            layout.Controls.Add(constraintRow, 0, 8);
 
             var constraintDescLabel = new Label
             {
@@ -317,7 +465,7 @@ namespace ParametricMidiSequencer.UI
                 ForeColor = System.Drawing.SystemColors.GrayText,
                 Margin = new Padding(0, 0, 0, 0)
             };
-            layout.Controls.Add(constraintDescLabel, 0, 5);
+            layout.Controls.Add(constraintDescLabel, 0, 9);
 
             // ===== Pitch-Center Cycling Section =====
             var pitchCenterSectionLabel = new Label
@@ -327,7 +475,7 @@ namespace ParametricMidiSequencer.UI
                 AutoSize = true,
                 Margin = new Padding(0, 15, 0, 6)
             };
-            layout.Controls.Add(pitchCenterSectionLabel, 0, 6);
+            layout.Controls.Add(pitchCenterSectionLabel, 0, 10);
 
             var pitchCenterRow = new FlowLayoutPanel
             {
@@ -359,7 +507,7 @@ namespace ParametricMidiSequencer.UI
 
             pitchCenterRow.Controls.Add(pitchCenterLabel);
             pitchCenterRow.Controls.Add(pitchCenterInput);
-            layout.Controls.Add(pitchCenterRow, 0, 7);
+            layout.Controls.Add(pitchCenterRow, 0, 11);
 
             var pitchCenterDescLabel = new Label
             {
@@ -368,7 +516,7 @@ namespace ParametricMidiSequencer.UI
                 ForeColor = System.Drawing.SystemColors.GrayText,
                 Margin = new Padding(0, 0, 0, 0)
             };
-            layout.Controls.Add(pitchCenterDescLabel, 0, 8);
+            layout.Controls.Add(pitchCenterDescLabel, 0, 12);
 
             // ===== Geometric Transform Section =====
             var geometricSectionLabel = new Label
@@ -378,7 +526,7 @@ namespace ParametricMidiSequencer.UI
                 AutoSize = true,
                 Margin = new Padding(0, 15, 0, 6)
             };
-            layout.Controls.Add(geometricSectionLabel, 0, 9);
+            layout.Controls.Add(geometricSectionLabel, 0, 13);
 
             var geometricTypeRow = new FlowLayoutPanel
             {
@@ -410,7 +558,7 @@ namespace ParametricMidiSequencer.UI
 
             geometricTypeRow.Controls.Add(geometricTypeLabel);
             geometricTypeRow.Controls.Add(geometricTypeCombo);
-            layout.Controls.Add(geometricTypeRow, 0, 10);
+            layout.Controls.Add(geometricTypeRow, 0, 14);
 
             var geometricTypeDescLabel = new Label
             {
@@ -419,7 +567,7 @@ namespace ParametricMidiSequencer.UI
                 ForeColor = System.Drawing.SystemColors.GrayText,
                 Margin = new Padding(0, 0, 0, 0)
             };
-            layout.Controls.Add(geometricTypeDescLabel, 0, 11);
+            layout.Controls.Add(geometricTypeDescLabel, 0, 15);
             _shapeTransformTypeDescLabel = geometricTypeDescLabel;
 
             // Parameter row (shown/hidden based on selected type)
@@ -501,7 +649,7 @@ namespace ParametricMidiSequencer.UI
             geometricParamRow.Controls.Add(reflectInput);
             geometricParamRow.Controls.Add(expandParamLabel);
             geometricParamRow.Controls.Add(expandInput);
-            layout.Controls.Add(geometricParamRow, 0, 12);
+            layout.Controls.Add(geometricParamRow, 0, 16);
             _shapeTransformParamRow = geometricParamRow;
             _shapeTransformRotateLabel = rotateParamLabel;
             _shapeTransformReflectLabel = reflectParamLabel;
@@ -515,7 +663,7 @@ namespace ParametricMidiSequencer.UI
                 Margin = new Padding(0, 0, 0, 0),
                 Visible = false
             };
-            layout.Controls.Add(geometricParamDescLabel, 0, 13);
+            layout.Controls.Add(geometricParamDescLabel, 0, 17);
             _shapeTransformParamDescLabel = geometricParamDescLabel;
         }
 
@@ -749,6 +897,42 @@ Duration: {summary.Duration}";
             if (_currentSpec == null)
                 return;
 
+            // Load scale settings into scale editor
+            _scaleTypeCombo.Enabled = true;
+            _scaleRootCombo.Enabled = true;
+            _scaleQualityCombo.Enabled = true;
+            _scaleModeCombo.Enabled = true;
+            _scaleCustomInput.Enabled = true;
+
+            if (_currentSpec.CustomScale != null && _currentSpec.CustomScale.Count > 0)
+            {
+                _scaleTypeCombo.SelectedItem = "Custom Pitch-Class Set";
+                _scaleCustomInput.Text = string.Join(",", _currentSpec.CustomScale);
+            }
+            else
+            {
+                var scaleName = (_currentSpec.ScaleName ?? "major").ToLowerInvariant();
+                bool isMode = ModeDescriptions.ContainsKey(scaleName);
+                if (isMode)
+                {
+                    _scaleTypeCombo.SelectedItem = "Mode";
+                    var rootItem = _currentSpec.Root ?? "C";
+                    _scaleRootCombo.SelectedItem = rootItem;
+                    if (_scaleRootCombo.SelectedIndex < 0) _scaleRootCombo.SelectedIndex = 0;
+                    var modeDisplay = scaleName.Length > 0 ? char.ToUpperInvariant(scaleName[0]) + scaleName.Substring(1) : scaleName;
+                    _scaleModeCombo.SelectedItem = modeDisplay;
+                    if (_scaleModeCombo.SelectedIndex < 0) _scaleModeCombo.SelectedIndex = 0;
+                }
+                else
+                {
+                    _scaleTypeCombo.SelectedItem = "Major / Minor";
+                    var rootItem = _currentSpec.Root ?? "C";
+                    _scaleRootCombo.SelectedItem = rootItem;
+                    if (_scaleRootCombo.SelectedIndex < 0) _scaleRootCombo.SelectedIndex = 0;
+                    _scaleQualityCombo.SelectedItem = string.Equals(scaleName, "minor", StringComparison.OrdinalIgnoreCase) ? "Minor" : "Major";
+                }
+            }
+
             _progressionRows = new BindingList<ProgressionRow>();
             foreach (var chord in _currentSpec.Progression)
             {
@@ -926,6 +1110,152 @@ Duration: {summary.Duration}";
             _currentSpec.Constraints.ShapeTransform.Amount = (double)_shapeTransformExpandInput.Value;
             DisplaySummary();
         }
+
+        private void ScaleType_Changed(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+
+            var selected = _scaleTypeCombo.SelectedItem?.ToString() ?? "Major / Minor";
+            bool isMajorMinor = selected == "Major / Minor";
+            bool isMode = selected == "Mode";
+            bool isCustom = selected == "Custom Pitch-Class Set";
+
+            _scaleRootLabel.Visible = isMajorMinor || isMode;
+            _scaleRootCombo.Visible = isMajorMinor || isMode;
+            _scaleQualityLabel.Visible = isMajorMinor;
+            _scaleQualityCombo.Visible = isMajorMinor;
+            _scaleModeLabel.Visible = isMode;
+            _scaleModeCombo.Visible = isMode;
+            _scaleCustomLabel.Visible = isCustom;
+            _scaleCustomInput.Visible = isCustom;
+
+            if (isMode)
+                UpdateModeDescription();
+            else if (!isCustom)
+                _scaleDescLabel.Text = "";
+
+            UpdateScaleSpec();
+        }
+
+        private void ScaleRoot_Changed(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+            UpdateScaleSpec();
+        }
+
+        private void ScaleQuality_Changed(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+            UpdateScaleSpec();
+        }
+
+        private void ScaleMode_Changed(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+            UpdateModeDescription();
+            UpdateScaleSpec();
+        }
+
+        private void ScaleCustom_TextChanged(object sender, EventArgs e)
+        {
+            if (_currentSpec == null)
+                return;
+            UpdateScaleSpec();
+        }
+
+        private void UpdateModeDescription()
+        {
+            var mode = _scaleModeCombo.SelectedItem?.ToString()?.ToLowerInvariant() ?? "";
+            _scaleDescLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+            _scaleDescLabel.Text = ModeDescriptions.TryGetValue(mode, out var desc) ? desc : "";
+        }
+
+        private void UpdateScaleSpec()
+        {
+            if (_currentSpec == null)
+                return;
+
+            var selected = _scaleTypeCombo.SelectedItem?.ToString() ?? "Major / Minor";
+            if (selected == "Custom Pitch-Class Set")
+            {
+                var parsed = ParseCustomPitchClasses(_scaleCustomInput.Text, out var validationMsg);
+                bool isValid = parsed != null;
+                _scaleCustomInput.BackColor = isValid || string.IsNullOrWhiteSpace(_scaleCustomInput.Text)
+                    ? System.Drawing.SystemColors.Window
+                    : Color.MistyRose;
+                if (!string.IsNullOrWhiteSpace(_scaleCustomInput.Text))
+                {
+                    _scaleDescLabel.ForeColor = isValid ? System.Drawing.SystemColors.GrayText : Color.Red;
+                    _scaleDescLabel.Text = isValid
+                        ? "Enter at least 3 pitch classes. Duplicates will be removed."
+                        : (validationMsg ?? "Invalid pitch classes.");
+                }
+                else
+                {
+                    _scaleDescLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+                    _scaleDescLabel.Text = "Enter at least 3 pitch classes. Duplicates will be removed.";
+                }
+                if (isValid)
+                {
+                    _currentSpec.CustomScale = parsed;
+                    _currentSpec.Scale = new List<int>();
+                }
+            }
+            else
+            {
+                _currentSpec.CustomScale = null;
+                _currentSpec.Scale = new List<int>();
+                var root = _scaleRootCombo.SelectedItem?.ToString() ?? "C";
+                _currentSpec.Root = root;
+                if (selected == "Mode")
+                {
+                    var mode = _scaleModeCombo.SelectedItem?.ToString()?.ToLowerInvariant() ?? "ionian";
+                    _currentSpec.ScaleName = mode;
+                }
+                else
+                {
+                    var quality = _scaleQualityCombo.SelectedItem?.ToString() ?? "Major";
+                    _currentSpec.ScaleName = quality.ToLowerInvariant();
+                }
+            }
+
+            DisplaySummary();
+        }
+
+        private static List<int>? ParseCustomPitchClasses(string text, out string? errorMessage)
+        {
+            errorMessage = null;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                errorMessage = "Enter pitch classes (0\u201311), separated by commas.";
+                return null;
+            }
+
+            var parts = text.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var result = new List<int>();
+            var seen = new HashSet<int>();
+            foreach (var part in parts)
+            {
+                if (!int.TryParse(part.Trim(), out var pc) || pc < 0 || pc > 11)
+                {
+                    errorMessage = $"Invalid pitch class '{part.Trim()}'. Values must be integers 0\u201311.";
+                    return null;
+                }
+                if (seen.Add(pc))
+                    result.Add(pc);
+            }
+            if (result.Count < 3)
+            {
+                errorMessage = "Enter at least 3 pitch classes.";
+                return null;
+            }
+            return result;
+        }
+
 
         private void AddChord_Click(object sender, EventArgs e)
         {
@@ -1187,6 +1517,22 @@ Duration: {summary.Duration}";
             "seventh"
         };
 
+        private static readonly string[] NoteNames =
+        {
+            "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+        };
+
+        private static readonly Dictionary<string, string> ModeDescriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "ionian",     "Ionian — major scale" },
+            { "dorian",     "Dorian — minor with raised 6" },
+            { "phrygian",   "Phrygian — minor with lowered 2" },
+            { "lydian",     "Lydian — major with raised 4" },
+            { "mixolydian", "Mixolydian — major with lowered 7" },
+            { "aeolian",    "Aeolian — natural minor" },
+            { "locrian",    "Locrian — diminished tonic" }
+        };
+
         // Control references
         private Label _pathLabel;
         private TextBox _summaryText;
@@ -1209,6 +1555,18 @@ Duration: {summary.Duration}";
         private NumericUpDown _shapeTransformExpandInput;
         private Label _shapeTransformParamDescLabel;
         private string _lastValidationMessage;
+
+        // Scale editor controls
+        private ComboBox _scaleTypeCombo;
+        private Label _scaleRootLabel;
+        private ComboBox _scaleRootCombo;
+        private Label _scaleQualityLabel;
+        private ComboBox _scaleQualityCombo;
+        private Label _scaleModeLabel;
+        private ComboBox _scaleModeCombo;
+        private Label _scaleCustomLabel;
+        private TextBox _scaleCustomInput;
+        private Label _scaleDescLabel;
 
         private class ProgressionRow
         {

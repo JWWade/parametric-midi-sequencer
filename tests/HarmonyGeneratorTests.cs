@@ -1123,4 +1123,144 @@ namespace ParametricMidiSequencer.Tests
             Assert.Equal(new[] { 60, 61, 65 }, chord);
         }
     }
+
+    public class ScaleEditorTests
+    {
+        [Theory]
+        [InlineData("C", 0)]
+        [InlineData("C#", 1)]
+        [InlineData("D", 2)]
+        [InlineData("D#", 3)]
+        [InlineData("E", 4)]
+        [InlineData("F", 5)]
+        [InlineData("F#", 6)]
+        [InlineData("G", 7)]
+        [InlineData("G#", 8)]
+        [InlineData("A", 9)]
+        [InlineData("A#", 10)]
+        [InlineData("B", 11)]
+        public void ScaleBuilder_ParseRoot_CorrectPitchClass(string root, int expected)
+        {
+            Assert.Equal(expected, ScaleBuilder.ParseRoot(root));
+        }
+
+        [Fact]
+        public void ScaleBuilder_BuildScale_Major_CMajor()
+        {
+            var scale = ScaleBuilder.BuildScale("major", "C");
+            Assert.Equal(new List<int> { 0, 2, 4, 5, 7, 9, 11 }, scale);
+        }
+
+        [Fact]
+        public void ScaleBuilder_BuildScale_Minor_AMinor()
+        {
+            var scale = ScaleBuilder.BuildScale("minor", "A");
+            // A natural minor: A B C D E F G -> 9 11 0 2 4 5 7
+            Assert.Equal(new List<int> { 9, 11, 0, 2, 4, 5, 7 }, scale);
+        }
+
+        [Fact]
+        public void ScaleBuilder_BuildScale_Major_GMajor()
+        {
+            var scale = ScaleBuilder.BuildScale("major", "G");
+            // G major: G A B C D E F# -> 7 9 11 0 2 4 6
+            Assert.Equal(new List<int> { 7, 9, 11, 0, 2, 4, 6 }, scale);
+        }
+
+        [Theory]
+        [InlineData("ionian",     new[] { 0,2,4,5,7,9,11 })]
+        [InlineData("dorian",     new[] { 0,2,3,5,7,9,10 })]
+        [InlineData("phrygian",   new[] { 0,1,3,5,7,8,10 })]
+        [InlineData("lydian",     new[] { 0,2,4,6,7,9,11 })]
+        [InlineData("mixolydian", new[] { 0,2,4,5,7,9,10 })]
+        [InlineData("aeolian",    new[] { 0,2,3,5,7,8,10 })]
+        [InlineData("locrian",    new[] { 0,1,3,5,6,8,10 })]
+        public void ModeBuilder_BuildModeScale_AllModes_RootC(string mode, int[] expected)
+        {
+            var scale = ModeBuilder.BuildModeScale(mode, "C");
+            Assert.Equal(expected.ToList(), scale);
+        }
+
+        [Fact]
+        public void ModeBuilder_BuildModeScale_Dorian_RootD()
+        {
+            var scale = ModeBuilder.BuildModeScale("dorian", "D");
+            // D Dorian: D E F G A B C -> 2 4 5 7 9 11 0
+            Assert.Equal(new List<int> { 2, 4, 5, 7, 9, 11, 0 }, scale);
+        }
+
+        [Fact]
+        public void ModeBuilder_BuildModeScale_Mixolydian_RootG()
+        {
+            var scale = ModeBuilder.BuildModeScale("mixolydian", "G");
+            // G Mixolydian: G A B C D E F -> 7 9 11 0 2 4 5
+            Assert.Equal(new List<int> { 7, 9, 11, 0, 2, 4, 5 }, scale);
+        }
+
+        [Fact]
+        public void HarmonyGenerator_UsesModeScale_WhenScaleNameIsMode()
+        {
+            var spec = new HarmonySpec
+            {
+                ScaleName = "dorian",
+                Root = "D",
+                Scale = new List<int>(),
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            Assert.NotEmpty(events);
+        }
+
+        [Fact]
+        public void HarmonyGenerator_UsesMajorScale_WhenScaleNameIsMajor()
+        {
+            var spec = new HarmonySpec
+            {
+                ScaleName = "major",
+                Root = "C",
+                Scale = new List<int>(),
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            // C major triad: C E G -> MIDI 60, 64, 67
+            var notes = events.Select(e => e.Note).OrderBy(n => n).ToList();
+            Assert.Equal(new[] { 60, 64, 67 }, notes);
+        }
+
+        [Fact]
+        public void HarmonySpec_CustomScale_OverridesScaleName()
+        {
+            var spec = new HarmonySpec
+            {
+                CustomScale = new List<int> { 0, 3, 7 },
+                ScaleName = "major",
+                Root = "C",
+                Scale = new List<int>(),
+                Progression = new List<ChordEvent>
+                {
+                    new() { Time = 0, Degree = 1, Type = "triad" }
+                },
+                Channel = 0,
+                Velocity = 90,
+                Duration = 4
+            };
+
+            var events = HarmonyGenerator.GenerateHarmonyEvents(spec);
+            Assert.NotEmpty(events);
+        }
+    }
 }
