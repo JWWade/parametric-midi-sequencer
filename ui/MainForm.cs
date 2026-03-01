@@ -757,7 +757,7 @@ namespace ParametricMidiSequencer.UI
             };
             layout.Controls.Add(circleLabel, 0, 4);
 
-            var chromaticCircle = new ChromaticCircleControl
+            var chromaticCircle = new ChromaticCircleView
             {
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0)
@@ -1758,7 +1758,7 @@ Duration: {summary.Duration}";
         private TextBox _scaleCustomInput = null!;
         private Label _scaleDescLabel = null!;
 
-        private ChromaticCircleControl _chromaticCircle = null!;
+        private ChromaticCircleView _chromaticCircle = null!;
         private Label _chordShapeLabel = null!;
 
         private class ProgressionRow

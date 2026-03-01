@@ -38,6 +38,8 @@ namespace ParametricMidiSequencer.Midi
             var ticksPerStep = ticksPerQuarter * 4 / Math.Max(1, steps);
             var totalSteps = Math.Max(1, steps * Math.Max(1, bars));
 
+            midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision((short)ticksPerQuarter);
+
             // First pass: compute the maximum intended NoteOff time so we can auto-extend bars if needed
             var ticksPerBar = ticksPerQuarter * 4; // ticks in one 4/4 bar
             long maxIntendedOff = 0L;
@@ -285,6 +287,8 @@ namespace ParametricMidiSequencer.Midi
             var tempo = 120;
             var scheduled = new System.Collections.Generic.List<(long time, MidiEvent ev)>();
 
+            midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision((short)ticksPerQuarter);
+
             scheduled.Add((0L, new TimeSignatureEvent(4, 4, 24, 8)));
             var microsecondsPerQuarter = (int)Math.Round(60000000.0 / tempo);
             scheduled.Add((0L, new SetTempoEvent(microsecondsPerQuarter)));
@@ -294,11 +298,16 @@ namespace ParametricMidiSequencer.Midi
                 var channel = (FourBitNumber)(Math.Max(0, Math.Min(15, _harmonySpec.Channel)));
                 var velocity = (SevenBitNumber)Math.Max(1, Math.Min(127, _harmonySpec.Velocity));
                 var note = (SevenBitNumber)Math.Max(0, Math.Min(127, harmonyEvent.Note));
-                
-                // TimeStep is interpreted as steps (assuming 4 steps per quarter note)
-                var noteOnTime = (long)harmonyEvent.TimeStep * (ticksPerQuarter / 4);
-                var noteDuration = (long)Math.Round(_harmonySpec.Duration * ticksPerQuarter);
-                var noteOffTime = noteOnTime + noteDuration;
+
+                // Harmony UI mode uses step-based timing (16 steps per bar => 4 steps per quarter note).
+                // Keep Time and Duration in the same unit (steps) and add a tiny release gap so
+                // notation tools don't render same-pitch re-articulation as ties.
+                var ticksPerStep = ticksPerQuarter / 4;
+                var noteOnTime = (long)harmonyEvent.TimeStep * ticksPerStep;
+                var noteDurationTicks = Math.Max(1L, (long)Math.Round(harmonyEvent.Duration * ticksPerStep));
+                var rearticulationGapTicks = Math.Max(1L, ticksPerStep / 8);
+                var safeDurationTicks = Math.Max(1L, noteDurationTicks - rearticulationGapTicks);
+                var noteOffTime = noteOnTime + safeDurationTicks;
                 
                 var noteOn = new NoteOnEvent(note, velocity) { Channel = channel };
                 var noteOff = new NoteOffEvent(note, (SevenBitNumber)0) { Channel = channel };
