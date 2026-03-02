@@ -16,6 +16,11 @@ namespace ParametricMidiSequencer.Models
         public string Root { get; set; } = "C";
         public List<ChordEvent> Progression { get; set; } = new List<ChordEvent>();
         public HarmonyConstraints Constraints { get; set; } = new HarmonyConstraints();
+
+        // PoC22: per-track geometric transform pipeline.
+        // When set, takes precedence over Constraints for all transform operations.
+        // Supports the JSON key "transforms" for new specs while "constraints" remains valid.
+        public HarmonyConstraints Transforms { get; set; }
         public int Channel { get; set; } = 0;
         public int Velocity { get; set; } = 90;
         public double Duration { get; set; } = 4;

@@ -7,6 +7,17 @@ namespace ParametricMidiSequencer.Models
 {
     public class HarmonyGenerator
     {
+        // PoC22: shared engine instance for geometric transform operations.
+        private static readonly GeometricTransformEngine _geoEngine = new GeometricTransformEngine();
+
+        /// <summary>
+        /// PoC22: Returns the effective constraints for a harmony spec.
+        /// Prefers <see cref="HarmonySpec.Transforms"/> (new per-track PoC22 key) when set,
+        /// otherwise falls back to <see cref="HarmonySpec.Constraints"/>.
+        /// </summary>
+        private static HarmonyConstraints GetEffectiveConstraints(HarmonySpec harmony)
+            => harmony.Transforms ?? harmony.Constraints;
+
         /// <summary>
         /// Returns the pitch-class sets (0–11) for each chord in the progression after applying
         /// all transforms (minSharedPitches, pitchCenterCycle, shapeTransform) but before inversion.
@@ -36,26 +47,27 @@ namespace ParametricMidiSequencer.Models
                     borrowMode, harmony.Root, useCustomScale));
             }
 
-            if (harmony.Constraints != null && harmony.Constraints.MinSharedPitches > 0)
+            // PoC22: resolve effective constraints (Transforms takes precedence over Constraints)
+            var constraints = GetEffectiveConstraints(harmony);
+
+            if (constraints != null && constraints.MinSharedPitches > 0)
             {
-                int depth = harmony.Constraints.TransformDepth > 0 ? harmony.Constraints.TransformDepth : int.MaxValue;
-                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, effectiveScale, depth);
+                int depth = constraints.TransformDepth > 0 ? constraints.TransformDepth : int.MaxValue;
+                ApplyMinSharedPitches(chords, constraints.MinSharedPitches, effectiveScale, depth);
             }
 
-            if (harmony.Constraints != null && harmony.Constraints.PitchCenterCycle != 0)
-                ApplyPitchCenterCycle(chords, harmony.Constraints.PitchCenterCycle);
+            if (constraints != null && constraints.PitchCenterCycle != 0)
+                ApplyPitchCenterCycle(chords, constraints.PitchCenterCycle);
 
-            if (harmony.Constraints != null && harmony.Constraints.ShapeTransform != null)
-                ApplyGeometricShapeTransform(chords, harmony.Constraints.ShapeTransform);
+            if (constraints != null && constraints.ShapeTransform != null)
+                ApplyGeometricShapeTransform(chords, constraints.ShapeTransform);
 
             // PoC20: global voice-leading optimization (optional)
-            if (harmony.Constraints != null && harmony.Constraints.OptimizeVoiceLeading)
+            if (constraints != null && constraints.OptimizeVoiceLeading)
             {
-                int minShared = harmony.Constraints.MinSharedPitches;
+                int minShared = constraints.MinSharedPitches;
                 chords = VoiceLeadingOptimizer.Optimize(chords, minShared);
             }
-
-            // Normalize all pitch classes to 0–11 range
             return chords.Select(c => c.Select(pc => ((pc % 12) + 12) % 12).Distinct().OrderBy(x => x).ToList()).ToList();
         }
 
@@ -96,29 +108,32 @@ namespace ParametricMidiSequencer.Models
                     borrowMode, harmony.Root, useCustomScale));
             }
 
+            // PoC22: resolve effective constraints (Transforms takes precedence over Constraints)
+            var constraints = GetEffectiveConstraints(harmony);
+
             // apply transform layer if requested
-            if (harmony.Constraints != null && harmony.Constraints.MinSharedPitches > 0)
+            if (constraints != null && constraints.MinSharedPitches > 0)
             {
-                int depth = harmony.Constraints.TransformDepth > 0 ? harmony.Constraints.TransformDepth : int.MaxValue;
-                ApplyMinSharedPitches(chords, harmony.Constraints.MinSharedPitches, effectiveScale, depth);
+                int depth = constraints.TransformDepth > 0 ? constraints.TransformDepth : int.MaxValue;
+                ApplyMinSharedPitches(chords, constraints.MinSharedPitches, effectiveScale, depth);
             }
 
             // second transform: pitch-center cycling
-            if (harmony.Constraints != null && harmony.Constraints.PitchCenterCycle != 0)
+            if (constraints != null && constraints.PitchCenterCycle != 0)
             {
-                ApplyPitchCenterCycle(chords, harmony.Constraints.PitchCenterCycle);
+                ApplyPitchCenterCycle(chords, constraints.PitchCenterCycle);
             }
 
             // third transform: geometric shape transform (PoC9)
-            if (harmony.Constraints != null && harmony.Constraints.ShapeTransform != null)
+            if (constraints != null && constraints.ShapeTransform != null)
             {
-                ApplyGeometricShapeTransform(chords, harmony.Constraints.ShapeTransform);
+                ApplyGeometricShapeTransform(chords, constraints.ShapeTransform);
             }
 
             // PoC20: global voice-leading optimization (optional)
-            if (harmony.Constraints != null && harmony.Constraints.OptimizeVoiceLeading)
+            if (constraints != null && constraints.OptimizeVoiceLeading)
             {
-                int minShared = harmony.Constraints.MinSharedPitches;
+                int minShared = constraints.MinSharedPitches;
                 chords = VoiceLeadingOptimizer.Optimize(chords, minShared);
             }
 
@@ -373,30 +388,23 @@ namespace ParametricMidiSequencer.Models
 
         // Uniformly rotate each chord's pitch classes by `shift` semitones (mod 12).
         // This transform is applied after minSharedPitches but before inversion.
+        // PoC22: delegates per-chord rotation to GeometricTransformEngine.
         private static void ApplyPitchCenterCycle(List<List<int>> chords, int shift)
         {
             if (chords == null || shift == 0)
                 return;
-            int s = ((shift % 12) + 12) % 12; // normalize into 0..11
             for (int i = 0; i < chords.Count; i++)
-            {
-                var chord = chords[i];
-                var rotated = chord.Select(pc => ((pc + s) % 12 + 12) % 12).ToList();
-                chords[i] = rotated;
-            }
+                chords[i] = _geoEngine.ApplyPitchCenterCycle(chords[i], shift);
         }
 
         // Apply geometric shape transform (PoC9) to each chord.
+        // PoC22: delegates per-chord transform to GeometricTransformEngine.
         private static void ApplyGeometricShapeTransform(List<List<int>> chords, Models.ShapeTransform transform)
         {
             if (chords == null || transform == null)
                 return;
-
             for (int i = 0; i < chords.Count; i++)
-            {
-                var transformed = Models.GeometricShapeTransform.Apply(chords[i], transform);
-                chords[i] = transformed;
-            }
+                chords[i] = _geoEngine.ApplyShapeTransform(chords[i], transform);
         }
 
         #endregion
@@ -406,28 +414,9 @@ namespace ParametricMidiSequencer.Models
         // Apply inversion to a chord (triad or seventh).
         // inversion: 0=root position, 1=first, 2=second, 3=third (seventh only).
         // Returns the reordered pitch classes with octave adjustments.
+        // PoC22: delegates to GeometricTransformEngine.
         private static List<int> ApplyInversion(List<int> chord, int inversion)
-        {
-            if (chord == null || chord.Count < 2 || inversion <= 0)
-                return chord;  // Root position, no change
-
-            var result = new List<int>(chord);
-            int voices = chord.Count;
-
-            // Validate inversion range
-            if (inversion >= voices)
-                return chord;  // Invalid inversion, return unchanged
-
-            // Rotate by moving voices to the end and adding 12 (octave)
-            for (int i = 0; i < inversion && i < voices; i++)
-            {
-                int firstNote = result[0];
-                result.RemoveAt(0);
-                result.Add(firstNote + 12);  // Move to higher octave
-            }
-
-            return result;
-        }
+            => _geoEngine.ApplyInversion(chord, inversion);
 
         #endregion
 
