@@ -4,6 +4,9 @@ namespace ParametricMidiSequencer.Models
 {
     public class HarmonySpec
     {
+        // Optional display name for this harmony track (PoC21 multi-track).
+        public string Name { get; set; } = null;
+
         // Custom pitch-class set for PoC8. If present, overrides Scale, ScaleName, Root, and BorrowMode.
         public List<int> CustomScale { get; set; } = null;
         
