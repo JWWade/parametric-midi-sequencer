@@ -153,8 +153,30 @@ namespace ParametricMidiSequencer
                 var tracks = root.GetProperty("tracks").Deserialize<ParametricMidiSequencer.Models.TrackSpec[]>(options);
                 if (tracks == null) tracks = new ParametricMidiSequencer.Models.TrackSpec[0];
                 
-                // Process harmony section if present
-                if (root.TryGetProperty("harmony", out var harmonyJson))
+                // Process harmonyTracks (PoC21 multi-track) if present; takes priority over legacy harmony.
+                if (root.TryGetProperty("harmonyTracks", out var harmonyTracksJson))
+                {
+                    var harmonySpecs = harmonyTracksJson.Deserialize<ParametricMidiSequencer.Models.HarmonySpec[]>(options);
+                    if (harmonySpecs != null && harmonySpecs.Length > 0)
+                    {
+                        var errors = ParametricMidiSequencer.Models.MultiTrackHarmonyEngine.Validate(harmonySpecs);
+                        foreach (var err in errors)
+                            Console.WriteLine($"Warning: {err}");
+
+                        var allHarmonyEvents = ParametricMidiSequencer.Models.MultiTrackHarmonyEngine.GenerateAllEvents(harmonySpecs);
+                        var tracksList = new System.Collections.Generic.List<ParametricMidiSequencer.Models.TrackSpec>(tracks);
+                        // Each ManualEvent already carries the correct channel set by the
+                        // individual HarmonySpec; the TrackSpec channel is a fallback only.
+                        tracksList.Add(new ParametricMidiSequencer.Models.TrackSpec
+                        {
+                            Name = "Harmony",
+                            Events = allHarmonyEvents
+                        });
+                        tracks = tracksList.ToArray();
+                    }
+                }
+                // Process legacy single-track harmony section if present and harmonyTracks is absent
+                else if (root.TryGetProperty("harmony", out var harmonyJson))
                 {
                     var harmony = harmonyJson.Deserialize<ParametricMidiSequencer.Models.HarmonySpec>(options);
                     if (harmony != null)
