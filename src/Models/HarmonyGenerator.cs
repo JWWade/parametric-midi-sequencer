@@ -48,6 +48,13 @@ namespace ParametricMidiSequencer.Models
             if (harmony.Constraints != null && harmony.Constraints.ShapeTransform != null)
                 ApplyGeometricShapeTransform(chords, harmony.Constraints.ShapeTransform);
 
+            // PoC20: global voice-leading optimization (optional)
+            if (harmony.Constraints != null && harmony.Constraints.OptimizeVoiceLeading)
+            {
+                int minShared = harmony.Constraints.MinSharedPitches;
+                chords = VoiceLeadingOptimizer.Optimize(chords, minShared);
+            }
+
             // Normalize all pitch classes to 0–11 range
             return chords.Select(c => c.Select(pc => ((pc % 12) + 12) % 12).Distinct().OrderBy(x => x).ToList()).ToList();
         }
@@ -106,6 +113,13 @@ namespace ParametricMidiSequencer.Models
             if (harmony.Constraints != null && harmony.Constraints.ShapeTransform != null)
             {
                 ApplyGeometricShapeTransform(chords, harmony.Constraints.ShapeTransform);
+            }
+
+            // PoC20: global voice-leading optimization (optional)
+            if (harmony.Constraints != null && harmony.Constraints.OptimizeVoiceLeading)
+            {
+                int minShared = harmony.Constraints.MinSharedPitches;
+                chords = VoiceLeadingOptimizer.Optimize(chords, minShared);
             }
 
             // convert final chords into manual events, preserving original times
