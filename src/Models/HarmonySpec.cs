@@ -35,6 +35,11 @@ namespace ParametricMidiSequencer.Models
 
         // Geometric chord-shape transform (PoC9).
         public ShapeTransform ShapeTransform { get; set; } = null;
+
+        // Enable global voice-leading optimization via DP (PoC20).
+        // When true, the VoiceLeadingOptimizer selects the lowest-cost voicing
+        // sequence across the entire progression before MIDI generation.
+        public bool OptimizeVoiceLeading { get; set; } = false;
     }
 
     public class ShapeTransform
