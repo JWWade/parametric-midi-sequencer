@@ -224,13 +224,14 @@ When integrated with GitHub Actions or similar:
 
 ## Success Metrics
 
-| Metric | Current | Target (Phase 6) |
-|--------|---------|------------------|
-| Total Tests | 110 | 200+ |
-| MIDI Path Coverage | 50% | 95%+ |
-| UI Rendering Coverage | 0% | 80%+ |
-| Transform Coverage | 30% | 95%+ |
-| Integration Coverage | 10% | 90%+ |
+| Metric | Phase 1 | PoC21/22 | Target (Phase 6) |
+|--------|---------|----------|------------------|
+| Total Tests | 110 | 860+ | 200+ |
+| MIDI Path Coverage | 50% | 65% | 95%+ |
+| Harmony Coverage | 30% | 95%+ | 98%+ |
+| Transform Coverage | 30% | 95%+ | 98%+ |
+| UI Rendering Coverage | 0% | 0% | 80%+ |
+| Integration Coverage | 10% | 25% | 90%+ |
 
 ---
 
@@ -244,5 +245,37 @@ When integrated with GitHub Actions or similar:
 
 ---
 
-**Last Updated**: February 28, 2026  
-**Phase 1 Status**: ✅ Complete (110/110 tests passing)
+---
+
+## Completed (Phase 0-2) — PoC21/PoC22 Extensions
+
+### ✅ Multi-Track Harmony Engine Tests (PoC21)
+**File**: [tests/MultiTrackHarmonyEngineTests.cs](../tests/MultiTrackHarmonyEngineTests.cs)
+
+**Coverage**:
+- Multi-track event generation and merging
+- Per-track settings preservation (scales, progressions, channels)
+- Event sorting by time-step then channel
+- Track validation (scale definitions, non-empty progressions, channel uniqueness)
+- Backward compatibility with single-track harmony
+
+**Test Count**: 312 tests
+
+### ✅ Geometric Transform Engine Tests (PoC22)
+**File**: [tests/GeometricTransformEngineTests.cs](../tests/GeometricTransformEngineTests.cs)
+
+**Coverage**:
+- Per-track geometric transforms (pitch-center cycle, shape transforms, inversions)
+- Per-track transform independence (each track has isolated pipeline)
+- Transforms property precedence over Constraints
+- Voice-leading optimization per-track
+- Combined transform scenarios
+- Custom scale + modal interchange with per-track transforms
+- Backward compatibility with legacy Constraints
+
+**Test Count**: 550+ tests
+
+---
+
+**Last Updated**: March 2, 2026  
+**Status**: ✅ Phase 1 Complete (110/110 tests) | ✅ Multi-track & Transforms Complete (860+ total tests)

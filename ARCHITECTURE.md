@@ -4,7 +4,7 @@
 
 This document describes the high-level architecture of the Parametric MIDI Sequencer, a JSON-driven toolset for generating MIDI sequences from parameterized patterns through either a CLI flow or a Windows UI flow.
 
-In addition to pattern-based sequencing, recent milestones introduced a **harmony module** capable of interpreting a compact chord progression JSON. Chords are constructed from scale information (or via modal interchange when `borrowMode` is specified), passed through transform layers (shared‑pitch, pitch‑center cycling, etc.), and optionally inverted before being injected as manual events into the scheduling engine.
+In addition to pattern-based sequencing, recent milestones introduced a **harmony module** capable of interpreting a compact chord progression JSON. Chords are constructed from scale information (or via modal interchange when `borrowMode` is specified), passed through independent per-track transform pipelines (shared‑pitch minimization, pitch‑center cycling, geometric shape transforms, inversions, and voice-leading optimization), and injected as manual events into the scheduling engine. The multi-track harmony engine (PoC21+) processes multiple harmony tracks independently with fully isolated transform pipelines, then merges all events into a unified timeline.
 
 ```mermaid
 graph TB
@@ -29,7 +29,7 @@ graph TB
     subgraph Models["Data Models"]
         PatternSpecJson["PatternSpecJson<br/>(id, type, note, interval,<br/>velocity, duration, offset,<br/>hitsPerBar, mode, expression)"]
         ManualEvent["ManualEvent<br/>(timeStep, note, velocity,<br/>duration, channel)"]
-        HarmonySpec["HarmonySpec<br/>(scale, scaleName, root,<br/>progression,inversion,constraints)"]
+        HarmonySpec["HarmonySpec<br/>(name, scale, scaleName, root,<br/>progression, constraints,<br/>transforms, channel, velocity)"]
     end
 
     subgraph Generator["MIDI Generation Engine"]
@@ -69,12 +69,18 @@ graph TB
     EventProcessing --> SortAndConvert
     SortAndConvert --> MidiFile
 
-    subgraph Harmony["Harmony Module"]
-        HarmonyJson["Parse harmony JSON"]
+    subgraph Harmony["Harmony Module (PoC19+)"]
+        HarmonyJson["Parse harmony JSON<br/>(single track)"]
+        HarmonyTracksJson["Parse harmonyTracks JSON<br/>(PoC21+ multi-track)"]
         HarmonyGenerator["HarmonyGenerator<br/>(build chords, transforms,<br/>inversions)"]
+        MultiTrackHarmony["MultiTrackHarmonyEngine<br/>(process tracks independently,<br/>merge events, sort)"]
+        GeometricTransforms["GeometricTransformEngine<br/>(PoC22: pitch rotation,<br/>shape transforms, inversions)"]
     end
     HarmonyJson --> HarmonyGenerator
-    HarmonyGenerator --> EventProcessing
+    HarmonyTracksJson --> MultiTrackHarmony
+    HarmonyGenerator --> GeometricTransforms
+    MultiTrackHarmony --> GeometricTransforms
+    GeometricTransforms --> EventProcessing
     
     MidiFile --> DryWetMidi
     JsonDeserializer --> JsonOutput
@@ -86,8 +92,10 @@ graph TB
 
 ### 1. **Input Layer**
 - **JSON Spec Files**: The only input format, with flexible structure:
-  - Full spec: `{ meta: {...}, tracks: [...] }`
+  - Full spec: `{ meta: {...}, tracks: [...], harmony?: {...} }` (single harmony track, legacy)
+  - Multi-track: `{ meta: {...}, tracks: [...], harmonyTracks: [...] }` (PoC21+, multiple independent harmony tracks)
   - Or just tracks array: `[{ name: "...", patterns: [...] }, ...]`
+  - Note: `harmonyTracks` takes priority over `harmony` if both are present
 
 ### 2. **CLI & Configuration**
 - **CliParser** (`Program.cs`): Extracts flags (tempo, steps, bars, extend, no-extend, list-events, out)
@@ -103,6 +111,19 @@ graph TB
   - `HitsPerBar`, `Mode` (for bar-relative scheduling)
   - `Expression` (for function-based patterns like `sin(x) > 0.5`)
 - **ManualEvent**: Direct note insertion at specific steps
+- **HarmonySpec**: Harmony track specification with:
+  - `Name` (optional display name for multi-track scenarios)
+  - `Scale` / `ScaleName` / `CustomScale` (pitch-class sets)
+  - `Root` (tonal center)
+  - `Progression` (list of `ChordEvent` entries with time, degree, type, inversion)
+  - `Constraints` (legacy transform options: minSharedPitches, pitchCenterCycle, shapeTransform, optimizeVoiceLeading)
+  - `Transforms` (PoC22: per-track transform pipeline, takes precedence over Constraints)
+  - `Channel`, `Velocity`, `Duration` (default values for generated notes)
+- **HarmonyConstraints** / **HarmonyTransforms**: Configure transformation layers with:
+  - `MinSharedPitches` (voice-leading smoothness)
+  - `PitchCenterCycle` (uniform pitch-class rotation)
+  - `ShapeTransform` (geometric pitch-class set operations)
+  - `OptimizeVoiceLeading` (dynamic programming voice-leading solver)
 
 ### 4. **MIDI Generation Engine** (`MidiGenerator.cs`)
 Single entry point: `GenerateFromSpec(MetaSpec, TrackSpec[])`
@@ -120,6 +141,34 @@ Single entry point: `GenerateFromSpec(MetaSpec, TrackSpec[])`
 **Sort & Convert**: Events sorted by time (meta first, NoteOff before NoteOn), converted to delta times for MIDI format
 
 Returns final bars used
+
+### 4a. **Harmony Module** (PoC19+)
+
+#### HarmonyGenerator (`Models/HarmonyGenerator.cs`)
+Generates MIDI events from a single `HarmonySpec`:
+- **Scale building**: Converts `ScaleName`/`Root` to pitch-class sets via `ScaleBuilder` and `ModeBuilder`, or uses `CustomScale`
+- **Modal interchange**: Optionally borrows chords via `borrowMode` on progression entries
+- **Chord construction**: Builds triads, sevenths, and custom chord types from scale degrees
+- **Transform pipeline** (applied in sequence):
+  1. **MinSharedPitches**: Voice-leading smoothing (minimize common tones between consecutive chords)
+  2. **PitchCenterCycle**: Uniform pitch-class rotation (shifts all pitches by N semitones)
+  3. **ShapeTransform**: Geometric pitch-class set operations (rotate, reflect, expand)
+  4. **OptimizeVoiceLeading**: Global DP-based voice-leading optimization
+- **Inversion**: Applies chord voicing inversions (root, first, second, third position)
+- Returns `List<ManualEvent>` for injection into MIDI scheduling
+
+#### MultiTrackHarmonyEngine (`Models/MultiTrackHarmonyEngine.cs`) — PoC21+
+Manages multiple independent harmony tracks:
+- **GenerateAllEvents()**: Processes each `HarmonySpec` independently, merges results
+- **Validate()**: Checks for scale definitions, non-empty progressions, optional channel uniqueness
+- Each track runs its own transform pipeline without affecting others
+- Output events are sorted by time-step then channel for deterministic merging
+
+#### GeometricTransformEngine (`Models/GeometricTransformEngine.cs`) — PoC22+
+Isolates geometric operations for reuse across harmony tracks:
+- **ApplyPitchCenterCycle()**: Rotates all pitch classes by N semitones (mod 12)
+- **ApplyShapeTransform()**: Applies geometric transforms (rotate, reflect, expand) via shared `GeometricShapeTransform`
+- **ApplyInversion()**: Moves lower voices to higher octaves for chord inversions
 
 ### 5. **Output & Diagnostics**
 - **MIDI File**: Written via DryWetMIDI; includes TimeSignatureEvent (4/4) and SetTempoEvent

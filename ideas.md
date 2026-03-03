@@ -5,7 +5,7 @@ A living document for early‑stage concepts, experiments, and design exploratio
 Parametric MIDI Sequencer — Ideas & Explorations
 
 This document collects early‑stage thoughts, conceptual sketches, and exploratory ideas for the parametric MIDI sequencer project. Nothing here is final; this is a sandbox for shaping the system’s direction.
-
+**Recent Milestones**: PoC21 (multi-track harmony with independent progressions) and PoC22 (dedicated GeometricTransformEngine for per-track transform isolation) have brought many ideas from this doc into reality. Multi-track specs with per-track transforms and geometric operations are now fully implemented.
 1. Core Vision
 
 A modular generative music engine where:

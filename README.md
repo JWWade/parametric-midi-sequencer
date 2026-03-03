@@ -20,8 +20,11 @@ It supports flexible pattern definitions with modulo intervals, function-based t
 - **Percussion mapping**: Auto-map to MIDI channel 10 for drum tracks
 - **Auto-extension**: Automatically extend bars to prevent notes from being cut off
 - **Diagnostic output**: List all generated events with `--list-events` flag
-- **Harmony generation**: Specify chord progressions with scale, degree, type, inversion and constraints like shared‑pitch minimums and pitch‑center cycling (see docs/poc/* for evolving proof‑of‑concept specs)
+- **Harmony generation**: Define chord progressions with scale, degree, type, and inversion (see docs/poc/* for evolving proof‑of‑concept specs)
+- **Multi-track harmony** (PoC21): Use `harmonyTracks` array to define and merge multiple independent harmony tracks with separate scales, progressions, and channels
+- **Per-track geometric transforms** (PoC22): Apply fully independent transform pipelines to each harmony track—shape transforms, pitch-center cycling, inversions, and voice-leading optimization all per-track
 - **Modal interchange**: Optionally borrow chords from other modes using a `borrowMode` field on individual progression entries (per PoC7 spec)
+- **Transform constraints**: Optional `constraints` or new `transforms` field on harmony specs for shared‑pitch minimums, pitch‑center cycling, geometric shape transforms, and voice-leading optimization
 - **CLI overrides**: Control tempo, steps, bars, and auto-extend behavior from command line
 - **Helper scripts**: Quick build/run workflows via batch scripts in `scripts/`
 
@@ -213,6 +216,56 @@ Insert notes at specific steps:
   ]
 }
 ```
+
+### Multi-Track Harmony (PoC21+)
+
+Define multiple independent harmony tracks with fully separate transform pipelines:
+
+```json
+{
+  "meta": {
+    "tempo": 100,
+    "steps": 16,
+    "bars": 4,
+    "ppq": 480
+  },
+  "tracks": [],
+  "harmonyTracks": [
+    {
+      "name": "Lead",
+      "scale": [0, 2, 4, 5, 7, 9, 11],
+      "progression": [
+        { "time": 0,  "degree": 1, "type": "triad" },
+        { "time": 8,  "degree": 4, "type": "triad" }
+      ],
+      "channel": 0,
+      "velocity": 90,
+      "duration": 4
+    },
+    {
+      "name": "Bass",
+      "scaleName": "minor",
+      "root": "A",
+      "progression": [
+        { "time": 0,  "degree": 1, "type": "triad" },
+        { "time": 8,  "degree": 5, "type": "triad" }
+      ],
+      "channel": 1,
+      "velocity": 80,
+      "duration": 8,
+      "transforms": {
+        "pitchCenterCycle": 2,
+        "shapeTransform": { "type": "reflect", "axis": 3 }
+      }
+    }
+  ]
+}
+```
+
+Each harmony track:
+- Runs independently with its own scale, progression, and transform pipeline
+- Uses the `transforms` property for per-track geometric operations (takes precedence over legacy `constraints`)
+- Merges into a unified event timeline sorted by time-step then channel
 
 ## CLI Options
 
